@@ -1,6 +1,6 @@
 name = "QuasiCrystal"
 uuid = "7178fac9-d2bf-4933-964d-a28131e4f2a4"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["sotashimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
