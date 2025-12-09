@@ -12,3 +12,8 @@ In this module, QuasiCrystals structures are available including,
 - Fibonacci Lattice
 - Penrose Tile
 - Amman Beenker Lattice
+
+# example
+
+tight-binding model is available  
+visualising method is available in source code but not available in exam
