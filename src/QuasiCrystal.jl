@@ -1,0 +1,8 @@
+module QuasiCrystal
+using LinearAlgebra, Plots
+include("core/abstractquasicrystals.jl")
+include("core/model/fibonacci.jl")
+include("core/model/penrose.jl")
+include("core/model/ammann_beenker.jl")
+include("utils/visualization.jl")
+end
