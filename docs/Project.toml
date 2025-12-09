@@ -1,4 +1,5 @@
 [deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 QuasiCrystal = "7178fac9-d2bf-4933-964d-a28131e4f2a4"
 
 [sources]
