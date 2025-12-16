@@ -5,6 +5,11 @@ These methods provide unified access to lattice properties regardless of whether
 the structure is a periodic lattice or an aperiodic quasicrystal.
 """
 
+using LinearAlgebra
+
+# Position tolerance for duplicate detection
+const POSITION_TOLERANCE = 1e-10
+
 """
     get_positions(lattice::AbstractLattice)
 Get the positions of all sites in the lattice.
@@ -114,7 +119,7 @@ function build_nearest_neighbor_bonds!(
       pos_j = data.positions[j]
       dist = norm(pos_j - pos_i)
 
-      if dist < cutoff && dist > 1e-10  # Avoid duplicate positions
+      if dist < cutoff && dist > POSITION_TOLERANCE  # Avoid duplicate positions
         # Add bond
         bond_vector = pos_j - pos_i
         push!(data.bonds, Bond(i, j, 1, bond_vector))

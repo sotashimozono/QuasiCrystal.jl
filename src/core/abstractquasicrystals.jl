@@ -54,6 +54,13 @@ struct QuasicrystalData{D,T,TileType}
   nearest_neighbors::Vector{Vector{Int}}
 end
 
+# Helper function to initialize empty bonds and nearest neighbors
+function _init_empty_connectivity(n_positions::Int)
+  bonds = Bond[]
+  nearest_neighbors = Vector{Int}[Int[] for _ in 1:n_positions]
+  return bonds, nearest_neighbors
+end
+
 # Convenience constructor that infers TileType
 function QuasicrystalData{D,T}(
   positions::Vector{Vector{T}},
@@ -62,8 +69,7 @@ function QuasicrystalData{D,T}(
   params::Dict{Symbol,Any},
 ) where {D,T,TT}
   # Default: no bonds or nearest neighbors
-  bonds = Bond[]
-  nearest_neighbors = Vector{Int}[Int[] for _ in 1:length(positions)]
+  bonds, nearest_neighbors = _init_empty_connectivity(length(positions))
   return QuasicrystalData{D,T,TT}(positions, tiles, method, params, bonds, nearest_neighbors)
 end
 
