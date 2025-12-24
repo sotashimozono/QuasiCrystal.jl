@@ -5,6 +5,7 @@ This module implements quantum mechanics calculations on quasicrystal structures
 focusing on the tight-binding approximation commonly used in condensed matter physics.
 """
 
+using QuasiCrystal
 using LinearAlgebra
 using SparseArrays
 

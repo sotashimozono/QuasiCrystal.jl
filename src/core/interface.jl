@@ -21,10 +21,6 @@ function get_positions(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
   return data.positions
 end
 
-function get_positions(lattice::Lattice{Topology,T,B,I}) where {Topology,T,B,I}
-  return lattice.positions
-end
-
 """
     get_bonds(lattice::AbstractLattice)
 Get the bonds (edges) in the lattice.
@@ -34,10 +30,6 @@ Get the bonds (edges) in the lattice.
 """
 function get_bonds(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
   return data.bonds
-end
-
-function get_bonds(lattice::Lattice{Topology,T,B,I}) where {Topology,T,B,I}
-  return lattice.bonds
 end
 
 """
@@ -51,12 +43,6 @@ function get_nearest_neighbors(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
   return data.nearest_neighbors
 end
 
-function get_nearest_neighbors(
-  lattice::Lattice{Topology,T,B,I}
-) where {Topology,T,B,I}
-  return lattice.nearest_neighbors
-end
-
 """
     num_sites(lattice::AbstractLattice)
 Get the total number of sites in the lattice.
@@ -68,10 +54,6 @@ function num_sites(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
   return length(data.positions)
 end
 
-function num_sites(lattice::Lattice{Topology,T,B,I}) where {Topology,T,B,I}
-  return lattice.N
-end
-
 """
     num_bonds(lattice::AbstractLattice)
 Get the total number of bonds in the lattice.
@@ -81,10 +63,6 @@ Get the total number of bonds in the lattice.
 """
 function num_bonds(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
   return length(data.bonds)
-end
-
-function num_bonds(lattice::Lattice{Topology,T,B,I}) where {Topology,T,B,I}
-  return length(lattice.bonds)
 end
 
 """

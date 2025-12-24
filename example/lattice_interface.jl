@@ -104,34 +104,6 @@ println("    Max: ", maximum(coord_numbers))
 println("    Mean: ", round(sum(coord_numbers) / length(coord_numbers); digits=2))
 
 # ============================================================================
-# 6. Working with Unit Cells (for Periodic Lattices)
-# ============================================================================
-
-println("\n6. Working with Unit Cells (Periodic Lattices)")
-println("-" ^ 70)
-
-# Get the unit cell for a square lattice
-square_uc = get_unit_cell(Square)
-
-println("Square lattice unit cell:")
-println("  Basis vectors:")
-for (i, basis) in enumerate(square_uc.basis)
-  println("    a$i = ", basis)
-end
-
-println("  Sublattice positions:")
-for (i, pos) in enumerate(square_uc.sublattice_positions)
-  println("    Site $i: ", pos)
-end
-
-println("  Connections:")
-for (i, conn) in enumerate(square_uc.connections)
-  println("    Connection $i: sublattice $(conn.src_sub) -> $(conn.dst_sub)")
-  println("      Cell offset: ($(conn.dx), $(conn.dy))")
-  println("      Type: $(conn.type)")
-end
-
-# ============================================================================
 # 7. Type Hierarchy
 # ============================================================================
 
