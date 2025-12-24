@@ -18,7 +18,7 @@ Get the positions of all sites in the lattice.
 - `Vector{Vector{T}}`: positions of all sites
 """
 function get_positions(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-  return data.positions
+    return data.positions
 end
 
 """
@@ -29,7 +29,7 @@ Get the bonds (edges) in the lattice.
 - `Vector{Bond}`: list of bonds
 """
 function get_bonds(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-  return data.bonds
+    return data.bonds
 end
 
 """
@@ -40,7 +40,7 @@ Get the nearest neighbor indices for each site.
 - `Vector{Vector{Int}}`: nearest neighbor indices for each site
 """
 function get_nearest_neighbors(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-  return data.nearest_neighbors
+    return data.nearest_neighbors
 end
 
 """
@@ -51,7 +51,7 @@ Get the total number of sites in the lattice.
 - `Int`: number of sites
 """
 function num_sites(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-  return length(data.positions)
+    return length(data.positions)
 end
 
 """
@@ -62,7 +62,7 @@ Get the total number of bonds in the lattice.
 - `Int`: number of bonds
 """
 function num_bonds(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-  return length(data.bonds)
+    return length(data.bonds)
 end
 
 """
@@ -78,38 +78,38 @@ Updates the `bonds` and `nearest_neighbors` fields in place.
 - Modified `data` with bonds and nearest neighbors populated
 """
 function build_nearest_neighbor_bonds!(
-  data::QuasicrystalData{D,T,TT}; cutoff::Real
+    data::QuasicrystalData{D,T,TT}; cutoff::Real
 ) where {D,T,TT}
-  n = length(data.positions)
+    n = length(data.positions)
 
-  # Initialize nearest neighbors if empty
-  if isempty(data.nearest_neighbors)
-    data.nearest_neighbors = [Int[] for _ in 1:n]
-  end
-
-  # Clear existing bonds
-  empty!(data.bonds)
-
-  # Build bonds based on distance
-  for i in 1:n
-    for j in (i + 1):n
-      pos_i = data.positions[i]
-      pos_j = data.positions[j]
-      dist = norm(pos_j - pos_i)
-
-      if dist < cutoff && dist > POSITION_TOLERANCE  # Avoid duplicate positions
-        # Add bond
-        bond_vector = pos_j - pos_i
-        push!(data.bonds, Bond(i, j, 1, bond_vector))
-
-        # Update nearest neighbors
-        push!(data.nearest_neighbors[i], j)
-        push!(data.nearest_neighbors[j], i)
-      end
+    # Initialize nearest neighbors if empty
+    if isempty(data.nearest_neighbors)
+        data.nearest_neighbors = [Int[] for _ in 1:n]
     end
-  end
 
-  return data
+    # Clear existing bonds
+    empty!(data.bonds)
+
+    # Build bonds based on distance
+    for i in 1:n
+        for j in (i + 1):n
+            pos_i = data.positions[i]
+            pos_j = data.positions[j]
+            dist = norm(pos_j - pos_i)
+
+            if dist < cutoff && dist > POSITION_TOLERANCE  # Avoid duplicate positions
+                # Add bond
+                bond_vector = pos_j - pos_i
+                push!(data.bonds, Bond(i, j, 1, bond_vector))
+
+                # Update nearest neighbors
+                push!(data.nearest_neighbors[i], j)
+                push!(data.nearest_neighbors[j], i)
+            end
+        end
+    end
+
+    return data
 end
 
 export get_positions, get_bonds, get_nearest_neighbors
