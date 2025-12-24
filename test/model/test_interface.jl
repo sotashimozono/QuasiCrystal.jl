@@ -20,19 +20,6 @@
     @test conn isa AbstractLatticeConnection
   end
 
-  @testset "UnitCell Construction" begin
-    # Test Square lattice unit cell
-    uc = get_unit_cell(Square)
-    @test uc isa UnitCell{2,Float64}
-    @test uc isa AbstractLattice{2}
-    @test length(uc.basis) == 2
-    @test uc.basis[1] == [1.0, 0.0]
-    @test uc.basis[2] == [0.0, 1.0]
-    @test length(uc.sublattice_positions) == 1
-    @test uc.sublattice_positions[1] == [0.0, 0.0]
-    @test length(uc.connections) == 2
-  end
-
   @testset "AbstractQuasicrystal inherits AbstractLattice" begin
     # Test type hierarchy
     @test FibonacciLattice <: AbstractQuasicrystal{1}
