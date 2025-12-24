@@ -208,7 +208,6 @@ penrose_bonds = draw_quasicrystal_with_bonds(;
 plot!(penrose_pic; title="Penrose Quasicrystal (Projection Method)")
 savefig(penrose_pic, "figure1")
 
-
 ammann_bonds = draw_quasicrystal_with_bonds(;
     model=:ammann_beenker,
     generator=:projection,

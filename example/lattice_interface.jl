@@ -40,7 +40,10 @@ build_nearest_neighbor_bonds!(fibonacci_qc; cutoff=2.0)
 
 println("After building bonds:")
 println("  Number of bonds: ", num_bonds(fibonacci_qc))
-println("  Average neighbors per site: ", sum(length.(get_nearest_neighbors(fibonacci_qc))) / num_sites(fibonacci_qc))
+println(
+    "  Average neighbors per site: ",
+    sum(length.(get_nearest_neighbors(fibonacci_qc))) / num_sites(fibonacci_qc),
+)
 
 # ============================================================================
 # 3. Accessing Lattice Properties via Unified Interface
@@ -67,14 +70,14 @@ println("\n4. Examining Bond Structure")
 println("-" ^ 70)
 
 if num_bonds(fibonacci_qc) > 0
-  println("First 5 bonds:")
-  for (i, bond) in enumerate(bonds[1:min(5, num_bonds(fibonacci_qc))])
-    pos_i = positions[bond.src][1]
-    pos_j = positions[bond.dst][1]
-    println("  Bond $i: site $(bond.src) -> $(bond.dst)")
-    println("    Positions: $pos_i -> $pos_j")
-    println("    Distance: $(norm(bond.vector))")
-  end
+    println("First 5 bonds:")
+    for (i, bond) in enumerate(bonds[1:min(5, num_bonds(fibonacci_qc))])
+        pos_i = positions[bond.src][1]
+        pos_j = positions[bond.dst][1]
+        println("  Bond $i: site $(bond.src) -> $(bond.dst)")
+        println("    Positions: $pos_i -> $pos_j")
+        println("    Distance: $(norm(bond.vector))")
+    end
 end
 
 # ============================================================================
@@ -129,38 +132,38 @@ println("\n8. Application Example: Computing Adjacency Information")
 println("-" ^ 70)
 
 function compute_adjacency_stats(lattice_data)
-  """
-  Example function that works with any AbstractLattice-compatible structure.
-  This demonstrates how applications like Lattice2DMonteCarlo can uniformly
-  access bond and site information.
-  """
-  n_sites = num_sites(lattice_data)
-  n_bonds = num_bonds(lattice_data)
-  neighbors = get_nearest_neighbors(lattice_data)
+    """
+    Example function that works with any AbstractLattice-compatible structure.
+    This demonstrates how applications like Lattice2DMonteCarlo can uniformly
+    access bond and site information.
+    """
+    n_sites = num_sites(lattice_data)
+    n_bonds = num_bonds(lattice_data)
+    neighbors = get_nearest_neighbors(lattice_data)
 
-  # Compute statistics
-  coord_numbers = [length(nn) for nn in neighbors]
-  avg_coord = sum(coord_numbers) / n_sites
+    # Compute statistics
+    coord_numbers = [length(nn) for nn in neighbors]
+    avg_coord = sum(coord_numbers) / n_sites
 
-  return Dict(
-    :n_sites => n_sites,
-    :n_bonds => n_bonds,
-    :avg_coordination => avg_coord,
-    :min_coordination => minimum(coord_numbers),
-    :max_coordination => maximum(coord_numbers),
-  )
+    return Dict(
+        :n_sites => n_sites,
+        :n_bonds => n_bonds,
+        :avg_coordination => avg_coord,
+        :min_coordination => minimum(coord_numbers),
+        :max_coordination => maximum(coord_numbers),
+    )
 end
 
 println("Computing adjacency statistics for Fibonacci lattice:")
 fib_stats = compute_adjacency_stats(fibonacci_qc)
 for (key, value) in fib_stats
-  println("  $key: $value")
+    println("  $key: $value")
 end
 
 println("\nComputing adjacency statistics for Penrose tiling:")
 penrose_stats = compute_adjacency_stats(penrose_qc)
 for (key, value) in penrose_stats
-  println("  $key: $value")
+    println("  $key: $value")
 end
 
 println("\n" * "=" ^ 70)

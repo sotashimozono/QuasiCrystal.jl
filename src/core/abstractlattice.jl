@@ -29,10 +29,10 @@ Struct for a bond (edge) in the lattice.
 - `vector::Vector{Float64}`: expresses the bond vector from src to dst
 """
 struct Bond <: AbstractLatticeConnection
-  src::Int
-  dst::Int
-  type::Int
-  vector::Vector{Float64}
+    src::Int
+    dst::Int
+    type::Int
+    vector::Vector{Float64}
 end
 
 """
@@ -45,11 +45,11 @@ Connection rules within or between unit cells (used for periodic lattices).
 - `type::Int`: type of the connection
 """
 struct Connection <: AbstractLatticeConnection
-  src_sub::Int
-  dst_sub::Int
-  dx::Int
-  dy::Int
-  type::Int
+    src_sub::Int
+    dst_sub::Int
+    dx::Int
+    dy::Int
+    type::Int
 end
 
 """
@@ -61,9 +61,9 @@ The lattice is constructed based on repeating this unit cell.
 - `connections::Vector{Connection}`: connection rules between sites
 """
 struct UnitCell{D,T} <: AbstractLattice{D}
-  basis::Vector{Vector{T}}
-  sublattice_positions::Vector{Vector{T}}
-  connections::Vector{Connection}
+    basis::Vector{Vector{T}}
+    sublattice_positions::Vector{Vector{T}}
+    connections::Vector{Connection}
 end
 
 export AbstractLattice, AbstractLatticeConnection
