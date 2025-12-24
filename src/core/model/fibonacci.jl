@@ -21,60 +21,60 @@ Generate Fibonacci lattice using projection from 2D square lattice.
 - `QuasicrystalData{1,Float64}`: generated Fibonacci lattice data
 """
 function generate_fibonacci_projection(
-  n_points::Int; method::ProjectionMethod=ProjectionMethod()
+    n_points::Int; method::ProjectionMethod=ProjectionMethod()
 )
-  # Project from 2D square lattice onto a line with irrational slope
-  # The slope is 1/φ where φ is the golden ratio
+    # Project from 2D square lattice onto a line with irrational slope
+    # The slope is 1/φ where φ is the golden ratio
 
-  slope = 1 / ϕ
-  acceptance_width = 1.0
+    slope = 1 / ϕ
+    acceptance_width = 1.0
 
-  positions = Float64[]
-  n_max = ceil(Int, n_points * 1.5)
+    positions = Float64[]
+    n_max = ceil(Int, n_points * 1.5)
 
-  for n1 in 0:n_max, n2 in 0:n_max
-    # Point in 2D lattice
-    point_2d = [float(n1), float(n2)]
+    for n1 in 0:n_max, n2 in 0:n_max
+        # Point in 2D lattice
+        point_2d = [float(n1), float(n2)]
 
-    # Project to parallel space (the line)
-    # Direction along line: [1, slope]
-    direction = [1.0, slope]
-    direction = direction / norm(direction)
-    pos_par = dot(point_2d, direction)
+        # Project to parallel space (the line)
+        # Direction along line: [1, slope]
+        direction = [1.0, slope]
+        direction = direction / norm(direction)
+        pos_par = dot(point_2d, direction)
 
-    # Project to perpendicular space
-    perp_direction = [-slope, 1.0]
-    perp_direction = perp_direction / norm(perp_direction)
-    pos_perp = dot(point_2d, perp_direction)
+        # Project to perpendicular space
+        perp_direction = [-slope, 1.0]
+        perp_direction = perp_direction / norm(perp_direction)
+        pos_perp = dot(point_2d, perp_direction)
 
-    # Check acceptance window
-    if abs(pos_perp) <= acceptance_width / 2
-      push!(positions, pos_par)
+        # Check acceptance window
+        if abs(pos_perp) <= acceptance_width / 2
+            push!(positions, pos_par)
+        end
+
+        if length(positions) >= n_points
+            break
+        end
     end
 
-    if length(positions) >= n_points
-      break
+    # Sort positions
+    sort!(positions)
+
+    # Trim to requested number
+    if length(positions) > n_points
+        positions = positions[1:n_points]
     end
-  end
 
-  # Sort positions
-  sort!(positions)
+    # Convert to vector of vectors for consistency
+    positions_vec = [[p] for p in positions]
 
-  # Trim to requested number
-  if length(positions) > n_points
-    positions = positions[1:n_points]
-  end
+    tiles = []  # No tiles for 1D lattice
 
-  # Convert to vector of vectors for consistency
-  positions_vec = [[p] for p in positions]
+    params = Dict{Symbol,Any}(
+        :n_points => length(positions), :slope => slope, :method_name => "projection"
+    )
 
-  tiles = []  # No tiles for 1D lattice
-
-  params = Dict{Symbol,Any}(
-    :n_points => length(positions), :slope => slope, :method_name => "projection"
-  )
-
-  return QuasicrystalData{1,Float64}(positions_vec, tiles, method, params)
+    return QuasicrystalData{1,Float64}(positions_vec, tiles, method, params)
 end
 
 """
@@ -88,56 +88,56 @@ Substitution rules: L -> LS, S -> L
 - `QuasicrystalData{1,Float64}`: generated Fibonacci lattice data
 """
 function generate_fibonacci_substitution(
-  generations::Int; method::SubstitutionMethod=SubstitutionMethod()
+    generations::Int; method::SubstitutionMethod=SubstitutionMethod()
 )
-  # Start with L
-  sequence = ['L']
+    # Start with L
+    sequence = ['L']
 
-  # Apply substitution rules
-  for gen in 1:generations
-    new_sequence = Char[]
+    # Apply substitution rules
+    for gen in 1:generations
+        new_sequence = Char[]
+        for symbol in sequence
+            if symbol == 'L'
+                append!(new_sequence, ['L', 'S'])
+            else  # symbol == 'S'
+                push!(new_sequence, 'L')
+            end
+        end
+        sequence = new_sequence
+    end
+
+    # Convert sequence to positions
+    # Let S = 1, L = φ
+    L_spacing = ϕ
+    S_spacing = 1.0
+
+    positions = [0.0]
+    current_pos = 0.0
+
     for symbol in sequence
-      if symbol == 'L'
-        append!(new_sequence, ['L', 'S'])
-      else  # symbol == 'S'
-        push!(new_sequence, 'L')
-      end
+        if symbol == 'L'
+            current_pos += L_spacing
+        else
+            current_pos += S_spacing
+        end
+        push!(positions, current_pos)
     end
-    sequence = new_sequence
-  end
 
-  # Convert sequence to positions
-  # Let S = 1, L = φ
-  L_spacing = ϕ
-  S_spacing = 1.0
+    # Convert to vector of vectors
+    positions_vec = [[p] for p in positions]
 
-  positions = [0.0]
-  current_pos = 0.0
+    tiles = []  # No tiles for 1D lattice
 
-  for symbol in sequence
-    if symbol == 'L'
-      current_pos += L_spacing
-    else
-      current_pos += S_spacing
-    end
-    push!(positions, current_pos)
-  end
+    params = Dict{Symbol,Any}(
+        :generations => generations,
+        :n_points => length(positions),
+        :sequence_length => length(sequence),
+        :L_spacing => L_spacing,
+        :S_spacing => S_spacing,
+        :method_name => "substitution",
+    )
 
-  # Convert to vector of vectors
-  positions_vec = [[p] for p in positions]
-
-  tiles = []  # No tiles for 1D lattice
-
-  params = Dict{Symbol,Any}(
-    :generations => generations,
-    :n_points => length(positions),
-    :sequence_length => length(sequence),
-    :L_spacing => L_spacing,
-    :S_spacing => S_spacing,
-    :method_name => "substitution",
-  )
-
-  return QuasicrystalData{1,Float64}(positions_vec, tiles, method, params)
+    return QuasicrystalData{1,Float64}(positions_vec, tiles, method, params)
 end
 
 """
@@ -146,14 +146,14 @@ Calculate the length of Fibonacci sequence after n generations.
 F(n) follows the Fibonacci numbers: 1, 2, 3, 5, 8, 13, ...
 """
 function fibonacci_sequence_length(n::Int)
-  if n <= 0
-    return 1
-  end
-  a, b = 1, 2
-  for i in 2:n
-    a, b = b, a + b
-  end
-  return b
+    if n <= 0
+        return 1
+    end
+    a, b = 1, 2
+    for i in 2:n
+        a, b = b, a + b
+    end
+    return b
 end
 
 export FibonacciLattice, generate_fibonacci_projection, generate_fibonacci_substitution

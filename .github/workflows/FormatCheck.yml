@@ -1,16 +1,25 @@
-name: "Format Check"
-
+name: Format Fix
 on:
-  pull_request_target:
-    paths: ['**/*.jl']
-    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request:
+    paths: ["**/*.jl"]
 
 permissions:
-  contents: read
-  actions: write
-  pull-requests: write
+  contents: write
 
 jobs:
-  format-check:
-    name: "Format Check"
-    uses: "ITensor/ITensorActions/.github/workflows/FormatCheck.yml@main"
+  format-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "1"
+      - name: Run JuliaFormatter
+        run: |
+          julia -e 'using Pkg; Pkg.add("JuliaFormatter"); using JuliaFormatter; format(".")'
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "🤖 Format code (Blue style)"

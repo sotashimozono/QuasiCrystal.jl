@@ -10,8 +10,9 @@ const ϕ = GOLDEN_RATIO
     AbstractQuasicrystal{D}
 Abstract type for quasicrystal topologies in D dimensions.
 Unlike periodic lattices, quasicrystals lack translational symmetry but have long-range order.
+Inherits from AbstractLattice to provide a unified interface with periodic lattices.
 """
-abstract type AbstractQuasicrystal{D} end
+abstract type AbstractQuasicrystal{D} <: AbstractLattice{D} end
 
 """
     AbstractGenerationMethod
@@ -41,22 +42,51 @@ Data structure holding the generated quasicrystal pattern.
 - `tiles::Vector{TileType}`: list of tiles in the pattern
 - `generation_method::AbstractGenerationMethod`: method used to generate
 - `parameters::Dict{Symbol,Any}`: generation parameters
+- `bonds::Vector{Bond}`: list of bonds connecting sites (optional, empty by default)
+- `nearest_neighbors::Vector{Vector{Int}}`: nearest neighbor indices for each site (optional, empty by default)
 """
 struct QuasicrystalData{D,T,TileType}
-  positions::Vector{Vector{T}}
-  tiles::Vector{TileType}
-  generation_method::AbstractGenerationMethod
-  parameters::Dict{Symbol,Any}
+    positions::Vector{Vector{T}}
+    tiles::Vector{TileType}
+    generation_method::AbstractGenerationMethod
+    parameters::Dict{Symbol,Any}
+    bonds::Vector{Bond}
+    nearest_neighbors::Vector{Vector{Int}}
+end
+
+# Helper function to initialize empty bonds and nearest neighbors
+function _init_empty_connectivity(n_positions::Int)
+    bonds = Bond[]
+    nearest_neighbors = Vector{Int}[Int[] for _ in 1:n_positions]
+    return bonds, nearest_neighbors
 end
 
 # Convenience constructor that infers TileType
 function QuasicrystalData{D,T}(
-  positions::Vector{Vector{T}},
-  tiles::Vector{TT},
-  method::AbstractGenerationMethod,
-  params::Dict{Symbol,Any},
+    positions::Vector{Vector{T}},
+    tiles::Vector{TT},
+    method::AbstractGenerationMethod,
+    params::Dict{Symbol,Any},
 ) where {D,T,TT}
-  return QuasicrystalData{D,T,TT}(positions, tiles, method, params)
+    # Default: no bonds or nearest neighbors
+    bonds, nearest_neighbors = _init_empty_connectivity(length(positions))
+    return QuasicrystalData{D,T,TT}(
+        positions, tiles, method, params, bonds, nearest_neighbors
+    )
+end
+
+# Constructor with bonds and nearest neighbors
+function QuasicrystalData{D,T}(
+    positions::Vector{Vector{T}},
+    tiles::Vector{TT},
+    method::AbstractGenerationMethod,
+    params::Dict{Symbol,Any},
+    bonds::Vector{Bond},
+    nearest_neighbors::Vector{Vector{Int}},
+) where {D,T,TT}
+    return QuasicrystalData{D,T,TT}(
+        positions, tiles, method, params, bonds, nearest_neighbors
+    )
 end
 
 """
@@ -67,9 +97,9 @@ Represents a single tile in the quasicrystal pattern.
 - `center::Vector{T}`: center position of the tile
 """
 struct Tile{D,T}
-  vertices::Vector{Vector{T}}
-  type::Int
-  center::Vector{T}
+    vertices::Vector{Vector{T}}
+    type::Int
+    center::Vector{T}
 end
 
 export AbstractQuasicrystal, AbstractGenerationMethod
