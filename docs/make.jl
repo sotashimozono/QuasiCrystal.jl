@@ -1,6 +1,32 @@
 using QuasiCrystal
 using Documenter
+using Downloads
 
-makedocs(; sitename="QuasiCrystal.jl", modules=[QuasiCrystal], pages=["Home" => "index.md"])
+assets_dir = joinpath(@__DIR__, "src", "assets")
+mkpath(assets_dir)
+favicon_path = joinpath(assets_dir, "favicon.ico")
 
-deploydocs(; repo="github.com/sotashimozono/QuasiCrystal.jl.git")
+Downloads.download("https://github.com/sotashimozono.png", favicon_path)
+
+makedocs(;
+    sitename="QuasiCrystal.jl",
+    modules=[QuasiCrystal],
+    format=Documenter.HTML(;
+        canonical="https://codes.sota-shimozono.com/QuasiCrystal.jl/stable/",
+        prettyurls=get(ENV, "CI", "false") == "true",
+        mathengine=MathJax3(
+            Dict(
+                :tex => Dict(
+                    :inlineMath => [["\$", "\$"], ["\\(", "\\)"]],
+                    :tags => "ams",
+                    :packages => ["base", "ams", "autoload", "physics"],
+                ),
+            ),
+        ),
+        assets=["assets/favicon.ico"],
+    ),
+    pages=["Home" => "index.md"],
+    warnonly=[:missing_docs, :cross_references],
+)
+
+deploydocs(; repo="github.com/sotashimozono/QuasiCrystal.jl.git", devbranch="main")
