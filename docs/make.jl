@@ -29,4 +29,4 @@ makedocs(;
     warnonly=[:missing_docs, :cross_references],
 )
 
-deploydocs(; repo="github.com/sotashimozono/QuasiCrystal.jl.git", devbranch="main")
+deploydocs(; repo="github.com/sotashimozono/QuasiCrystal.jl.git", devbranch="master")
