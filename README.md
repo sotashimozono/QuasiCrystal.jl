@@ -1,6 +1,6 @@
 # QuasiCrystal.jl
 
-[![docs: dev](https://img.shields.io/badge/docs-stable-blue.svg)](https://codes.sota-shimozono/QuasiCrystal.jl/stable/)
+[![docs: dev](https://img.shields.io/badge/docs-stable-blue.svg)](https://codes.sota-shimozono.com/QuasiCrystal.jl/stable/)
 [![Julia](https://img.shields.io/badge/julia-v1.10+-9558b2.svg)](https://julialang.org)
 [![Code Style: Blue](https://img.shields.io/badge/Code%20Style-Blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![codecov](https://codecov.io/gh/sotashimozono/Lattices.jl/graph/badge.svg?token=6E7VZ9MJMK)](https://codecov.io/gh/sotashimozono/Lattices.jl)
