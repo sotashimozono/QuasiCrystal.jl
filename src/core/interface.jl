@@ -108,10 +108,39 @@ function build_nearest_neighbor_bonds!(
             end
         end
     end
-
     return data
 end
 
+function build_quasicrystal(
+    type::Type{<:AbstractQuasicrystal};
+    generator::Symbol=:projection,
+    radius=3.0,
+    generations::Int=4,
+    n_points::Int=200,
+)
+    if type == PenroseP3
+        return if generator == :projection
+            generate_penrose_projection(radius)
+        else
+            generate_penrose_substitution(generations)
+        end
+    elseif type == AmmannBeenker
+        return if generator == :projection
+            generate_ammann_beenker_projection(radius)
+        else
+            generate_ammann_beenker_substitution(generations)
+        end
+    elseif type == FibonacciLattice
+        return if generator == :projection
+            generate_fibonacci_projection(n_points)
+        else
+            generate_fibonacci_substitution(generations)
+        end
+    else
+        error("Unsupported type: $(type). Choose :penrose, :ammann_beenker, or :fibonacci.")
+    end
+end
+export build_quasicrystal
 export get_positions, get_bonds, get_nearest_neighbors
 export num_sites, num_bonds
 export build_nearest_neighbor_bonds!
