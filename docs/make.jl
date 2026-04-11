@@ -31,15 +31,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Guide" => [
-            "guide/cut_and_project.md",
-            "guide/fourier_analysis.md",
-        ],
-        "Gallery (visual verification)" => [
-            "gallery/fibonacci.md",
-            "gallery/ammann_beenker.md",
-            "gallery/penrose.md",
-        ],
+        "Guide" => ["guide/cut_and_project.md", "guide/fourier_analysis.md"],
+        "Gallery (visual verification)" =>
+            ["gallery/fibonacci.md", "gallery/ammann_beenker.md", "gallery/penrose.md"],
         "API" => "api.md",
     ],
     warnonly=[:missing_docs, :cross_references],

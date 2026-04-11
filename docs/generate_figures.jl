@@ -40,9 +40,7 @@ savepng(
 fib_peaks = bragg_peaks(qc_fib; kmax=20.0, intensity_cutoff=1e-4)
 savepng(
     diffraction_pattern(
-        fib_peaks;
-        title="Fibonacci diffraction (log₁₀ I / I_max)",
-        log_intensity=true,
+        fib_peaks; title="Fibonacci diffraction (log₁₀ I / I_max)", log_intensity=true
     ),
     "fibonacci_diffraction.png",
 )
@@ -87,8 +85,8 @@ savepng(
     "penrose_diffraction.png",
 )
 
-@info "All figures regenerated." sites_fib = num_sites(qc_fib) sites_ab = num_sites(
-    qc_ab
-) sites_pen = num_sites(qc_pen) peaks_fib = num_k_points(fib_peaks) peaks_ab = num_k_points(
-    ab_peaks
-) peaks_pen = num_k_points(pen_peaks)
+@info "All figures regenerated." sites_fib = num_sites(qc_fib) sites_ab = num_sites(qc_ab) sites_pen = num_sites(
+    qc_pen
+) peaks_fib = num_k_points(fib_peaks) peaks_ab = num_k_points(ab_peaks) peaks_pen = num_k_points(
+    pen_peaks
+)
