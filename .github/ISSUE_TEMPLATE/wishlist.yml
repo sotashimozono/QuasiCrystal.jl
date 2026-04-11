@@ -1,0 +1,62 @@
+name: 💭 Wish List
+description: Ideas for future features and improvements
+title: "[Wish]: "
+labels: ["wishlist", "future"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Record ideas for features or improvements to be implemented in the future.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: Feature Idea
+      description: What feature or functionality would you like to implement?
+      placeholder: Describe your idea in detail...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How would you prioritize this feature?
+      options:
+        - "High - Immediate priority / Urgent"
+        - "Medium - Planned for future development"
+        - "Low - Long-term idea / Just a note"
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Rationale
+      description: Why is this feature needed? (e.g., scientific motivation, workflow efficiency)
+    validations:
+      required: false
+
+  - type: textarea
+    id: sketch
+    attributes:
+      label: Sketch & Conceptual Design
+      description: Describe implementation ideas or technical approaches.
+      placeholder: |
+        ```julia
+        # Conceptual implementation or pseudo-code
+        function solve_new_method(params...)
+            # ...
+        end
+        ```
+      render: julia
+    validations: 
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related papers, links, other libraries, or prior discussions.
+    validations:
+      required: false

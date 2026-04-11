@@ -1,0 +1,72 @@
+name: Publish Release
+
+# Publishes a GitHub Release whenever a vX.Y.Z tag is pushed.
+#
+# The release notes are built by `.github/scripts/build_release_notes.py`,
+# which inspects every PR merged since the previous tag, extracts the
+# `## Proposed Changes` and `## Usage or Results` sections from each PR
+# body, groups them by label, and writes a rich markdown report.
+#
+# If a draft release for this tag already exists (e.g. left by Release
+# Drafter) it is overwritten with the rich notes and published.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "tag to publish (e.g. v0.3.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Need full history so the script can find the previous tag
+          # via `git tag --sort=-creatordate` and `git log <tag>`.
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/release
+          python3 .github/scripts/build_release_notes.py \
+            --tag "${{ steps.tag.outputs.tag }}" \
+            > /tmp/release/notes.md
+          echo "--- generated notes ---"
+          cat /tmp/release/notes.md
+          echo "-----------------------"
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --title "$TAG" \
+              --notes-file /tmp/release/notes.md \
+              --draft=false
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes-file /tmp/release/notes.md
+          fi
