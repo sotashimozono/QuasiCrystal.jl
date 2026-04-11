@@ -171,31 +171,42 @@ Geometry (matching [`generate_penrose_projection`](@ref)):
 function hyper_reciprocal_lattice(::QuasicrystalData{2,Float64,PenroseP3})
     T = Float64
     hyper_basis = SMatrix{5,5,T}(
-        2π, 0, 0, 0, 0,
-        0, 2π, 0, 0, 0,
-        0, 0, 2π, 0, 0,
-        0, 0, 0, 2π, 0,
-        0, 0, 0, 0, 2π,
+        2π, 0, 0, 0, 0, 0, 2π, 0, 0, 0, 0, 0, 2π, 0, 0, 0, 0, 0, 2π, 0, 0, 0, 0, 0, 2π
     )
 
     θ = T(2π / 5)
 
     # parallel_proj columns: (cos((k-1)θ), sin((k-1)θ)), k=1..5
     parallel_proj = SMatrix{2,5,T}(
-        cos(0 * θ), sin(0 * θ),
-        cos(1 * θ), sin(1 * θ),
-        cos(2 * θ), sin(2 * θ),
-        cos(3 * θ), sin(3 * θ),
-        cos(4 * θ), sin(4 * θ),
+        cos(0 * θ),
+        sin(0 * θ),
+        cos(1 * θ),
+        sin(1 * θ),
+        cos(2 * θ),
+        sin(2 * θ),
+        cos(3 * θ),
+        sin(3 * θ),
+        cos(4 * θ),
+        sin(4 * θ),
     )
 
     # perp_proj columns: (cos(2(k-1)θ), sin(2(k-1)θ), cos(3(k-1)θ))
     perp_proj = SMatrix{3,5,T}(
-        cos(2 * 0 * θ), sin(2 * 0 * θ), cos(3 * 0 * θ),
-        cos(2 * 1 * θ), sin(2 * 1 * θ), cos(3 * 1 * θ),
-        cos(2 * 2 * θ), sin(2 * 2 * θ), cos(3 * 2 * θ),
-        cos(2 * 3 * θ), sin(2 * 3 * θ), cos(3 * 3 * θ),
-        cos(2 * 4 * θ), sin(2 * 4 * θ), cos(3 * 4 * θ),
+        cos(2 * 0 * θ),
+        sin(2 * 0 * θ),
+        cos(3 * 0 * θ),
+        cos(2 * 1 * θ),
+        sin(2 * 1 * θ),
+        cos(3 * 1 * θ),
+        cos(2 * 2 * θ),
+        sin(2 * 2 * θ),
+        cos(3 * 2 * θ),
+        cos(2 * 3 * θ),
+        sin(2 * 3 * θ),
+        cos(3 * 3 * θ),
+        cos(2 * 4 * θ),
+        sin(2 * 4 * θ),
+        cos(3 * 4 * θ),
     )
 
     window = BoxWindow(SVector{3,T}(0.5, 0.5, 0.5))

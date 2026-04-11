@@ -12,7 +12,7 @@
 
         # Even symmetry under q → -q.
         @test window_fourier(w, SVector(1.1, 2.7, 0.9)) ≈
-              window_fourier(w, SVector(-1.1, -2.7, -0.9))
+            window_fourier(w, SVector(-1.1, -2.7, -0.9))
     end
 
     @testset "hyper_reciprocal_lattice for Penrose P3" begin
