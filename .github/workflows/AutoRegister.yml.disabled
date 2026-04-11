@@ -1,0 +1,75 @@
+name: AutoRegister
+
+# Runs after Release Drafter completes on main.
+# If Project.toml version changed, posts @JuliaRegistrator register comment.
+
+on:
+  workflow_run:
+    workflows: ['Release Drafter']
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  register:
+    # Only run if Release Drafter succeeded
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2 # need HEAD and HEAD~1 to compare
+
+      - name: Check if version changed
+        id: version_check
+        run: |
+          PREV=$(git show HEAD~1:Project.toml 2>/dev/null | grep '^version' | head -1 | sed 's/.*"\(.*\)"/\1/' || echo "")
+          CURR=$(grep '^version' Project.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          echo "prev=$PREV"
+          echo "curr=$CURR"
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          echo "curr=$CURR" >> "$GITHUB_OUTPUT"
+          if [ "$PREV" != "$CURR" ] && [ -n "$CURR" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate release notes text
+        if: steps.version_check.outputs.changed == 'true'
+        id: notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURR: ${{ steps.version_check.outputs.curr }}
+        run: |
+          DRAFT_BODY=$(gh release list --limit 50 --json tagName,isDraft \
+            --jq '.[] | select(.isDraft == true) | .tagName' | head -n 1 | \
+            xargs -I{} gh release view {} --json body --jq '.body' 2>/dev/null || echo "")
+
+          if [ -z "$DRAFT_BODY" ] || [ "$DRAFT_BODY" = "null" ]; then
+            DRAFT_BODY=$(printf '## Changelog\n\n- See commit history for details in v%s.\n\n## Breaking changes\n\n- No explicit breaking changes were detected in automation.' "$CURR")
+          fi
+
+          printf 'content<<RELEASE_NOTES_EOF\n%s\nRELEASE_NOTES_EOF\n' "$DRAFT_BODY" >> "$GITHUB_OUTPUT"
+
+      - name: Post @JuliaRegistrator comment on commit
+        if: steps.version_check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NOTES: ${{ steps.notes.outputs.content }}
+          CURR: ${{ steps.version_check.outputs.curr }}
+          PREV: ${{ steps.version_check.outputs.prev }}
+          COMMIT: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          BODY=$(printf '@JuliaRegistrator register\n\nRelease notes:\n\n%s\n\nVersion bumped from `%s` -> `%s` by commit %s.' \
+            "$RELEASE_NOTES" "$PREV" "$CURR" "$COMMIT")
+
+          # Registrator accepts comments on commits, not pull requests.
+          gh api "repos/${REPO}/commits/${COMMIT}/comments" -f body="$BODY"

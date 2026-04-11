@@ -1,0 +1,58 @@
+name: 🐛 Bug Report
+description: バグや問題を報告する
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告ありがとうございます。以下の情報を提供してください。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What kind of issue are you experiencing?
+      placeholder: Please describe the bug in detail.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Codes to Reproduce
+      description: Provide a code snippet that reproduces the issue.
+      placeholder: |
+        ```julia
+        # paste your code
+        ```
+      render: julia
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Information
+      description: Version of Julia etc...
+      placeholder: |
+        - Julia version: 
+        - OS:
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: If there is any other information that may be helpful, please provide it here.
+    validations:
+      required: false

@@ -1,0 +1,72 @@
+name: VersionCheck
+
+# Ensures that every PR targeting main bumps Project.toml version.
+# The check fails if the version in the PR branch is not strictly greater
+# than the version on the base branch.
+#
+# IMPORTANT: this workflow runs on *every* PR, not only PRs that touch
+# Project.toml. Restricting the trigger with `paths: Project.toml`
+# would let version-bump-forgotten PRs slip through silently because
+# the workflow would never run, and required-check gating treats the
+# absent run as a "skipped, OK" instead of a failure.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch both the PR branch and the base branch so we can compare.
+          fetch-depth: 0
+
+      - name: Get base branch version
+        id: base
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          VERSION=$(git show origin/${{ github.base_ref }}:Project.toml \
+            | grep '^version' | head -1 | sed 's/.*"\(.*\)"/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Base version: $VERSION"
+
+      - name: Get PR branch version
+        id: pr
+        run: |
+          VERSION=$(grep '^version' Project.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "PR version: $VERSION"
+
+      - name: Compare versions (semver)
+        env:
+          BASE: ${{ steps.base.outputs.version }}
+          PR:   ${{ steps.pr.outputs.version }}
+        run: |
+          # Split a semver string into its numeric parts and compare.
+          version_gt() {
+            # Returns 0 (success) if $1 > $2 as semver, 1 otherwise.
+            IFS='.' read -r -a A <<< "$1"
+            IFS='.' read -r -a B <<< "$2"
+            for i in 0 1 2; do
+              a="${A[$i]:-0}"
+              b="${B[$i]:-0}"
+              if [ "$a" -gt "$b" ]; then return 0; fi
+              if [ "$a" -lt "$b" ]; then return 1; fi
+            done
+            return 1  # equal is not greater
+          }
+
+          echo "Base: $BASE  →  PR: $PR"
+          if version_gt "$PR" "$BASE"; then
+            echo "✓ Version bumped ($BASE → $PR)"
+          else
+            echo "✗ Version NOT bumped. PR version ($PR) must be strictly greater than base version ($BASE)."
+            exit 1
+          fi

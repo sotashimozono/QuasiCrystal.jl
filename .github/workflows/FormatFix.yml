@@ -1,7 +1,7 @@
 name: Format Fix
 on:
   pull_request:
-    paths: ["**/*.jl"]
+    paths: ['**/*.jl']
 
 permissions:
   contents: write
@@ -10,12 +10,12 @@ jobs:
   format-fix:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
       - uses: julia-actions/setup-julia@v2
         with:
-          version: "1"
+          version: '1'
       - name: Run JuliaFormatter
         run: |
           julia -e 'using Pkg; Pkg.add("JuliaFormatter"); using JuliaFormatter; format(".")'
