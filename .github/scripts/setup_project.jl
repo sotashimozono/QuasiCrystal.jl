@@ -22,8 +22,12 @@ for file in files_to_fix
             content = replace(content, r"^name = \".*\""m => "name = \"$new_name\"")
             content = replace(content, r"^uuid = \".*\""m => "uuid = \"$new_uuid\"")
         elseif file == "docs/Project.toml"
-            content = replace(content, Regex("$(new_name) = \".*\"") => "$(new_name) = \"$new_uuid\"")
-            content = replace(content, r"^uuid = \".*\""m => "uuid = \"$(string(uuid4()))\"")
+            content = replace(
+                content, Regex("$(new_name) = \".*\"") => "$(new_name) = \"$new_uuid\""
+            )
+            content = replace(
+                content, r"^uuid = \".*\""m => "uuid = \"$(string(uuid4()))\""
+            )
         end
         write(file, content)
     end
