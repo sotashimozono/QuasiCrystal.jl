@@ -1,7 +1,8 @@
 ENV["GKSwstype"] = "100"
 
 using QuasiCrystal, Test
-using Plots, LinearAlgebra
+using LinearAlgebra
+using StaticArrays
 const dirs = ["model"]
 
 @testset "tests" begin
