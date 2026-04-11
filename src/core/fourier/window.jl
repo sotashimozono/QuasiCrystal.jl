@@ -89,9 +89,7 @@ struct BoxWindow{DPerp,T<:AbstractFloat} <: AcceptanceWindow
     half_widths::SVector{DPerp,T}
 end
 
-function window_fourier(
-    w::BoxWindow{DPerp,T}, q::SVector{DPerp,<:Real}
-) where {DPerp,T}
+function window_fourier(w::BoxWindow{DPerp,T}, q::SVector{DPerp,<:Real}) where {DPerp,T}
     result = one(T)
     for i in 1:DPerp
         a = w.half_widths[i]

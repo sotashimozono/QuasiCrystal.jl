@@ -117,12 +117,7 @@ The resulting `BraggPeakSet` plugs into
 """
 function hyper_reciprocal_lattice(::QuasicrystalData{2,Float64,AmmannBeenker})
     T = Float64
-    hyper_basis = SMatrix{4,4,T}(
-        2π, 0, 0, 0,
-        0, 2π, 0, 0,
-        0, 0, 2π, 0,
-        0, 0, 0, 2π,
-    )
+    hyper_basis = SMatrix{4,4,T}(2π, 0, 0, 0, 0, 2π, 0, 0, 0, 0, 2π, 0, 0, 0, 0, 2π)
 
     θ = T(π / 4)
     c0, s0 = cos(zero(T)), sin(zero(T))
@@ -134,21 +129,11 @@ function hyper_reciprocal_lattice(::QuasicrystalData{2,Float64,AmmannBeenker})
     # Physical star (k = 1..4): angles 0, π/4, π/2, 3π/4.
     # SMatrix is column-major, so each (col_1, col_2) pair is one
     # star vector.
-    parallel_proj = SMatrix{2,4,T}(
-        c0, s0,
-        c1, s1,
-        c2, s2,
-        c3, s3,
-    )
+    parallel_proj = SMatrix{2,4,T}(c0, s0, c1, s1, c2, s2, c3, s3)
 
     # Perpendicular star: angles π/4, π/2, 3π/4, π — the shifted
     # choice the generator currently filters with.
-    perp_proj = SMatrix{2,4,T}(
-        c1, s1,
-        c2, s2,
-        c3, s3,
-        c4, s4,
-    )
+    perp_proj = SMatrix{2,4,T}(c1, s1, c2, s2, c3, s3, c4, s4)
 
     # Square acceptance window of half-width 0.5 on each perp axis,
     # matching `generate_ammann_beenker_projection`'s

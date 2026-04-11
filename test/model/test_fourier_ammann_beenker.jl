@@ -9,21 +9,16 @@
         # 2 sin(qa)/q convention at q=0 → 2a).
         for q1 in (0.3, 1.7, 4.1), q2 in (0.5, 2.2, 3.3)
             expected = (2 * sin(q1 * 0.5) / q1) * (2 * sin(q2 * 0.5) / q2)
-            @test isapprox(
-                window_fourier(w, SVector(q1, q2)), expected; atol=1e-12
-            )
+            @test isapprox(window_fourier(w, SVector(q1, q2)), expected; atol=1e-12)
         end
 
         # One-axis limit: q₂ = 0 reduces to a 1D sinc times 2·a₂.
         q1 = 1.3
         expected = (2 * sin(q1 * 0.5) / q1) * 1.0
-        @test isapprox(
-            window_fourier(w, SVector(q1, 0.0)), expected; atol=1e-12
-        )
+        @test isapprox(window_fourier(w, SVector(q1, 0.0)), expected; atol=1e-12)
 
         # Symmetric in both q axes.
-        @test window_fourier(w, SVector(1.1, 2.7)) ≈
-              window_fourier(w, SVector(-1.1, -2.7))
+        @test window_fourier(w, SVector(1.1, 2.7)) ≈ window_fourier(w, SVector(-1.1, -2.7))
     end
 
     @testset "hyper_reciprocal_lattice for Ammann–Beenker" begin
