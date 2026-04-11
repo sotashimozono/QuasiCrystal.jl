@@ -72,7 +72,7 @@ function generate_penrose_projection(
         :window_size => window_size,
         :n_vertices => length(positions),
     )
-    return QuasicrystalData{2,Float64}(positions, tiles, method, params)
+    return QuasicrystalData{2,Float64}(PenroseP3(), positions, tiles, method, params)
 end
 
 """
@@ -126,7 +126,7 @@ function generate_penrose_substitution(
         :n_tiles => length(tiles),
         :n_vertices => length(positions),
     )
-    return QuasicrystalData{2,Float64}(positions, tiles, method, params)
+    return QuasicrystalData{2,Float64}(PenroseP3(), positions, tiles, method, params)
 end
 
 """

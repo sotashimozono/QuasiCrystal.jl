@@ -53,27 +53,34 @@ struct Tile{D,T}
 end
 
 """
-    QuasicrystalData{D, T, TileType} <: LatticeCore.AbstractLattice{D, T}
+    QuasicrystalData{D, T, Topo, TileType, L} <: LatticeCore.AbstractLattice{D, T}
 
 The concrete lattice instance returned by the `generate_*` family
 of functions. Subtype of
-[`LatticeCore.AbstractLattice`](@ref LatticeCore.AbstractLattice)`{D, T}`
-so that every LatticeCore observer, trait, and test-suite helper
-works on quasicrystals as well as on periodic lattices.
+`LatticeCore.AbstractLattice{D, T}` so that every LatticeCore
+observer, trait, and test-suite helper works on quasicrystals as
+well as on periodic lattices.
+
+The `topology::Topo` field carries the topology marker singleton
+(e.g. `FibonacciLattice()`, `PenroseP3()`, `AmmannBeenker()`).
+Fourier-analysis entry points like
+[`hyper_reciprocal_lattice`](@ref) and
+[`LatticeCore.fourier_module`](@ref LatticeCore.fourier_module)
+dispatch on `topology`'s concrete type to pick the right
+projection matrices and acceptance window.
 
 # Fields
 
+- `topology::Topo` — topology marker singleton
 - `positions::Vector{SVector{D, T}}` — physical positions of every
   site
 - `tiles::Vector{TileType}` — list of tiles in the tiling (may be
   empty for 1D lattices or ungenerated tilings)
 - `generation_method::AbstractGenerationMethod` — which algorithm
   built this instance
-- `parameters::Dict{Symbol, Any}` — free-form parameter bag kept
-  for backwards compatibility with the pre-migration API
+- `parameters::Dict{Symbol, Any}` — free-form parameter bag
 - `bonds::Vector{Bond{D, T}}` — nearest-neighbour bonds, populated
-  by [`build_nearest_neighbor_bonds!`](@ref) or by generation
-  functions that know the local connectivity
+  by [`build_nearest_neighbor_bonds!`](@ref)
 - `nearest_neighbors::Vector{Vector{Int}}` — neighbour adjacency
   lists, one per site
 - `layout::AbstractSiteLayout` — LatticeCore site layout (defaults
@@ -83,8 +90,10 @@ works on quasicrystals as well as on periodic lattices.
 with `build_nearest_neighbor_bonds!(data; cutoff)` before Monte
 Carlo observers walk the graph.
 """
-struct QuasicrystalData{D,T<:AbstractFloat,TileType,L<:AbstractSiteLayout} <:
-       AbstractLattice{D,T}
+struct QuasicrystalData{
+    D,T<:AbstractFloat,Topo<:AbstractQuasicrystal{D},TileType,L<:AbstractSiteLayout
+} <: AbstractLattice{D,T}
+    topology::Topo
     positions::Vector{SVector{D,T}}
     tiles::Vector{TileType}
     generation_method::AbstractGenerationMethod
@@ -97,17 +106,18 @@ end
 # ---- Convenience constructors ---------------------------------------
 
 function QuasicrystalData{D,T}(
+    topology::Topo,
     positions::Vector{SVector{D,T}},
     tiles::Vector{TT},
     method::AbstractGenerationMethod,
     params::Dict{Symbol,Any};
     layout::AbstractSiteLayout=UniformLayout(IsingSite()),
-) where {D,T<:AbstractFloat,TT}
+) where {D,T<:AbstractFloat,Topo<:AbstractQuasicrystal{D},TT}
     n = length(positions)
     bonds = Bond{D,T}[]
     nn = [Int[] for _ in 1:n]
-    return QuasicrystalData{D,T,TT,typeof(layout)}(
-        positions, tiles, method, params, bonds, nn, layout
+    return QuasicrystalData{D,T,Topo,TT,typeof(layout)}(
+        topology, positions, tiles, method, params, bonds, nn, layout
     )
 end
 

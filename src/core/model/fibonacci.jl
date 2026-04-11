@@ -59,7 +59,7 @@ function generate_fibonacci_projection(
     params = Dict{Symbol,Any}(
         :n_points => length(positions), :slope => slope, :method_name => "projection"
     )
-    return QuasicrystalData{1,Float64}(positions, tiles, method, params)
+    return QuasicrystalData{1,Float64}(FibonacciLattice(), positions, tiles, method, params)
 end
 
 """
@@ -108,7 +108,7 @@ function generate_fibonacci_substitution(
         :S_spacing => S_spacing,
         :method_name => "substitution",
     )
-    return QuasicrystalData{1,Float64}(positions, tiles, method, params)
+    return QuasicrystalData{1,Float64}(FibonacciLattice(), positions, tiles, method, params)
 end
 
 """

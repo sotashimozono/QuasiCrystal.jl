@@ -3,7 +3,7 @@
 [![docs: dev](https://img.shields.io/badge/docs-stable-blue.svg)](https://codes.sota-shimozono.com/QuasiCrystal.jl/stable/)
 [![Julia](https://img.shields.io/badge/julia-v1.10+-9558b2.svg)](https://julialang.org)
 [![Code Style: Blue](https://img.shields.io/badge/Code%20Style-Blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
-[![codecov](https://codecov.io/gh/sotashimozono/Lattices.jl/graph/badge.svg?token=6E7VZ9MJMK)](https://codecov.io/gh/sotashimozono/Lattices.jl)
+[![codecov](https://codecov.io/gh/sotashimozono/QuasiCrystal.jl/graph/badge.svg?token=BQ44OVM37N)](https://codecov.io/gh/sotashimozono/QuasiCrystal.jl)
 [![Build Status](https://github.com/sotashimozono/QuasiCrystal.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/sotashimozono/QuasiCrystal.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
