@@ -16,9 +16,7 @@ continue to work.
 Scatter a 1D quasicrystal's positions along a line. Requires
 `Plots` to be loaded at the call site.
 """
-function visualize_quasicrystal_positions(
-    qc::QuasicrystalData{1,T}; kwargs...
-) where {T}
+function visualize_quasicrystal_positions(qc::QuasicrystalData{1,T}; kwargs...) where {T}
     positions_1d = [position(qc, i)[1] for i in 1:num_sites(qc)]
     y_vals = zeros(length(positions_1d))
 
@@ -42,9 +40,7 @@ end
 
 Scatter a 2D quasicrystal's positions. Requires `Plots`.
 """
-function visualize_quasicrystal_positions(
-    qc::QuasicrystalData{2,T}; kwargs...
-) where {T}
+function visualize_quasicrystal_positions(qc::QuasicrystalData{2,T}; kwargs...) where {T}
     x_vals = [position(qc, i)[1] for i in 1:num_sites(qc)]
     y_vals = [position(qc, i)[2] for i in 1:num_sites(qc)]
 

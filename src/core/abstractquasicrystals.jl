@@ -119,8 +119,9 @@ LatticeCore.position(data::QuasicrystalData, i::Int) = data.positions[i]
 
 LatticeCore.neighbors(data::QuasicrystalData, i::Int) = data.nearest_neighbors[i]
 
-LatticeCore.boundary(::QuasicrystalData{D}) where {D} =
+function LatticeCore.boundary(::QuasicrystalData{D}) where {D}
     LatticeBoundary(ntuple(_ -> OpenAxis(), D), NoModifier())
+end
 
 LatticeCore.site_layout(data::QuasicrystalData) = data.layout
 

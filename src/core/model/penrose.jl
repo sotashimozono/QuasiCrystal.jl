@@ -49,9 +49,7 @@ function generate_penrose_projection(
     n_max = ceil(Int, radius * 1.5)
 
     for n1 in (-n_max):n_max,
-        n2 in (-n_max):n_max,
-        n3 in (-n_max):n_max,
-        n4 in (-n_max):n_max,
+        n2 in (-n_max):n_max, n3 in (-n_max):n_max, n4 in (-n_max):n_max,
         n5 in (-n_max):n_max
 
         lattice_point = [float(n1), float(n2), float(n3), float(n4), float(n5)]

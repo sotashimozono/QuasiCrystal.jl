@@ -45,8 +45,7 @@ function generate_ammann_beenker_projection(
     n_max = ceil(Int, radius * 1.5)
 
     for n1 in (-n_max):n_max,
-        n2 in (-n_max):n_max,
-        n3 in (-n_max):n_max,
+        n2 in (-n_max):n_max, n3 in (-n_max):n_max,
         n4 in (-n_max):n_max
 
         lattice_point = [float(n1), float(n2), float(n3), float(n4)]
@@ -90,10 +89,7 @@ function generate_ammann_beenker_substitution(
 
     # Seed: a unit square.
     square_vertices = [
-        SVector(0.0, 0.0),
-        SVector(1.0, 0.0),
-        SVector(1.0, 1.0),
-        SVector(0.0, 1.0),
+        SVector(0.0, 0.0), SVector(1.0, 0.0), SVector(1.0, 1.0), SVector(0.0, 1.0)
     ]
     square_center = SVector(0.5, 0.5)
     push!(initial_tiles, Tile{2,Float64}(square_vertices, 1, square_center))
