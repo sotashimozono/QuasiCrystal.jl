@@ -1,108 +1,78 @@
 """
-Common interface methods for AbstractLattice types.
+Backwards-compat accessors for `QuasicrystalData` plus the
+distance-based nearest-neighbour builder.
 
-These methods provide unified access to lattice properties regardless of whether
-the structure is a periodic lattice or an aperiodic quasicrystal.
+After the LatticeCore migration the canonical accessors are
+`num_sites`, `position`, `neighbors`, and `bonds` — they are all
+exported by LatticeCore and work on any `AbstractLattice`. The
+names in this file remain for legacy code that spells them out.
 """
 
-using LinearAlgebra
-
-# Position tolerance for duplicate detection
+"""Position tolerance for duplicate-detection in `build_nearest_neighbor_bonds!`."""
 const POSITION_TOLERANCE = 1e-10
 
 """
-    get_positions(lattice::AbstractLattice)
-Get the positions of all sites in the lattice.
+    get_positions(data::QuasicrystalData) → Vector{SVector{D, T}}
 
-# Returns
-- `Vector{Vector{T}}`: positions of all sites
+Return the list of site positions. Equivalent to the LatticeCore
+idiom `collect(positions(data))`.
 """
-function get_positions(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-    return data.positions
-end
+get_positions(data::QuasicrystalData) = data.positions
 
 """
-    get_bonds(lattice::AbstractLattice)
-Get the bonds (edges) in the lattice.
+    get_bonds(data::QuasicrystalData) → Vector{Bond{D, T}}
 
-# Returns
-- `Vector{Bond}`: list of bonds
+Return the list of `LatticeCore.Bond` objects populated by
+[`build_nearest_neighbor_bonds!`](@ref).
 """
-function get_bonds(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-    return data.bonds
-end
+get_bonds(data::QuasicrystalData) = data.bonds
 
 """
-    get_nearest_neighbors(lattice::AbstractLattice)
-Get the nearest neighbor indices for each site.
+    get_nearest_neighbors(data::QuasicrystalData) → Vector{Vector{Int}}
 
-# Returns
-- `Vector{Vector{Int}}`: nearest neighbor indices for each site
+Return the neighbour adjacency lists. Equivalent to
+`[neighbors(data, i) for i in 1:num_sites(data)]`.
 """
-function get_nearest_neighbors(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-    return data.nearest_neighbors
-end
+get_nearest_neighbors(data::QuasicrystalData) = data.nearest_neighbors
 
 """
-    num_sites(lattice::AbstractLattice)
-Get the total number of sites in the lattice.
+    num_bonds(data::QuasicrystalData) → Int
 
-# Returns
-- `Int`: number of sites
+Number of bonds currently stored. Zero until
+[`build_nearest_neighbor_bonds!`](@ref) populates the bond list.
 """
-function num_sites(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-    return length(data.positions)
-end
+num_bonds(data::QuasicrystalData) = length(data.bonds)
 
 """
-    num_bonds(lattice::AbstractLattice)
-Get the total number of bonds in the lattice.
+    build_nearest_neighbor_bonds!(data::QuasicrystalData{D, T}; cutoff::Real)
 
-# Returns
-- `Int`: number of bonds
-"""
-function num_bonds(data::QuasicrystalData{D,T,TT}) where {D,T,TT}
-    return length(data.bonds)
-end
+Populate `data.bonds` and `data.nearest_neighbors` with all pairs
+of sites whose Euclidean distance is strictly less than `cutoff`
+and strictly greater than `POSITION_TOLERANCE`. Existing bonds are
+cleared first. Mutates `data.bonds` and the inner vectors of
+`data.nearest_neighbors` in place.
 
-"""
-    build_nearest_neighbor_bonds!(data::QuasicrystalData{D,T,TT}; cutoff::Real) where {D,T,TT}
-Build nearest neighbor bonds for a quasicrystal based on distance cutoff.
-Updates the `bonds` and `nearest_neighbors` fields in place.
-
-# Arguments
-- `data`: Quasicrystal data structure
-- `cutoff`: Maximum distance for nearest neighbors
-
-# Returns
-- Modified `data` with bonds and nearest neighbors populated
+Returns `data` for chaining.
 """
 function build_nearest_neighbor_bonds!(
-    data::QuasicrystalData{D,T,TT}; cutoff::Real
-) where {D,T,TT}
-    n = length(data.positions)
+    data::QuasicrystalData{D,T}; cutoff::Real
+) where {D,T}
+    n = num_sites(data)
 
-    # Initialize nearest neighbors if empty
-    if isempty(data.nearest_neighbors)
-        data.nearest_neighbors = [Int[] for _ in 1:n]
+    # Clear any previously populated connectivity.
+    empty!(data.bonds)
+    for nb in data.nearest_neighbors
+        empty!(nb)
     end
 
-    # Clear existing bonds
-    empty!(data.bonds)
-
-    # Build bonds based on distance
     for i in 1:n
+        pos_i = data.positions[i]
         for j in (i + 1):n
-            pos_i = data.positions[i]
             pos_j = data.positions[j]
-            dist = norm(pos_j - pos_i)
-
-            if dist < cutoff && dist > POSITION_TOLERANCE  # Avoid duplicate positions
-                # Add bond
-                bond_vector = pos_j - pos_i
-                push!(data.bonds, Bond(i, j, 1, bond_vector))
-
-                # Update nearest neighbors
+            bond_vec = pos_j - pos_i
+            dist = norm(bond_vec)
+            if dist < cutoff && dist > POSITION_TOLERANCE
+                push!(data.bonds, Bond{D,T}(i, j, bond_vec, :nearest))
                 push!(data.nearest_neighbors[i], j)
                 push!(data.nearest_neighbors[j], i)
             end
@@ -111,6 +81,16 @@ function build_nearest_neighbor_bonds!(
     return data
 end
 
+"""
+    build_quasicrystal(type::Type{<:AbstractQuasicrystal};
+                       generator::Symbol = :projection,
+                       radius = 3.0,
+                       generations::Int = 4,
+                       n_points::Int = 200)
+
+High-level dispatch wrapper: selects the right generator for a
+topology marker.
+"""
 function build_quasicrystal(
     type::Type{<:AbstractQuasicrystal};
     generator::Symbol=:projection,
@@ -137,10 +117,8 @@ function build_quasicrystal(
             generate_fibonacci_substitution(generations)
         end
     else
-        error("Unsupported type: $(type). Choose :penrose, :ammann_beenker, or :fibonacci.")
+        error(
+            "Unsupported type: $(type). Choose PenroseP3, AmmannBeenker, or FibonacciLattice.",
+        )
     end
 end
-export build_quasicrystal
-export get_positions, get_bonds, get_nearest_neighbors
-export num_sites, num_bonds
-export build_nearest_neighbor_bonds!

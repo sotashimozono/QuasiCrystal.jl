@@ -1,6 +1,10 @@
 """
-Quasicrystal structures and generation methods.
-This file contains the infrastructure for generating quasicrystalline patterns.
+Quasicrystal topology markers, generation method tags, and the
+`QuasicrystalData` concrete lattice type.
+
+After the LatticeCore migration, `AbstractLattice`, `Bond`, and
+`UnitCell` are imported from LatticeCore; only QuasiCrystal-specific
+abstractions live here.
 """
 
 const GOLDEN_RATIO = (1 + sqrt(5)) / 2
@@ -8,101 +12,126 @@ const ϕ = GOLDEN_RATIO
 
 """
     AbstractQuasicrystal{D}
-Abstract type for quasicrystal topologies in D dimensions.
-Unlike periodic lattices, quasicrystals lack translational symmetry but have long-range order.
-Inherits from AbstractLattice to provide a unified interface with periodic lattices.
+
+Topology marker for cut-and-project / substitution quasicrystals in
+`D` physical dimensions. Unlike `LatticeCore.AbstractLattice`, this
+is **not** a lattice type — it is a *dispatch key* identifying the
+family of algorithms used to generate a concrete
+[`QuasicrystalData`](@ref) instance. The shipped markers are
+[`FibonacciLattice`](@ref), [`PenroseP3`](@ref), and
+[`AmmannBeenker`](@ref).
 """
-abstract type AbstractQuasicrystal{D} <: AbstractLattice{D} end
+abstract type AbstractQuasicrystal{D} end
 
 """
     AbstractGenerationMethod
-Abstract type for quasicrystal generation methods.
-Different methods can be used to generate the same quasicrystal pattern.
+
+Tag type for the algorithmic strategy used to build a quasicrystal:
+[`ProjectionMethod`](@ref) (cut-and-project from a higher-dimensional
+periodic lattice) or [`SubstitutionMethod`](@ref) (inflation /
+substitution rules).
 """
 abstract type AbstractGenerationMethod end
 
-"""
-    ProjectionMethod <: AbstractGenerationMethod
-Generate quasicrystals via projection from higher-dimensional periodic lattices.
-This is the most common theoretical approach.
-"""
+"""Cut-and-project generation tag."""
 struct ProjectionMethod <: AbstractGenerationMethod end
 
-"""
-    SubstitutionMethod <: AbstractGenerationMethod
-Generate quasicrystals via substitution (inflation) rules.
-This is an alternative algorithmic approach.
-"""
+"""Substitution / inflation generation tag."""
 struct SubstitutionMethod <: AbstractGenerationMethod end
 
 """
-    QuasicrystalData{D,T,TileType}
-Data structure holding the generated quasicrystal pattern.
-- `positions::Vector{Vector{T}}`: positions of vertices/sites
-- `tiles::Vector{TileType}`: list of tiles in the pattern
-- `generation_method::AbstractGenerationMethod`: method used to generate
-- `parameters::Dict{Symbol,Any}`: generation parameters
-- `bonds::Vector{Bond}`: list of bonds connecting sites (optional, empty by default)
-- `nearest_neighbors::Vector{Vector{Int}}`: nearest neighbor indices for each site (optional, empty by default)
+    Tile{D, T}
+
+A single tile in a quasicrystalline tiling. Carries the vertices of
+the tile, an integer type id (e.g. fat vs thin rhombus), and the
+tile centre.
 """
-struct QuasicrystalData{D,T,TileType}
-    positions::Vector{Vector{T}}
+struct Tile{D,T}
+    vertices::Vector{SVector{D,T}}
+    type::Int
+    center::SVector{D,T}
+end
+
+"""
+    QuasicrystalData{D, T, TileType} <: LatticeCore.AbstractLattice{D, T}
+
+The concrete lattice instance returned by the `generate_*` family
+of functions. Subtype of
+[`LatticeCore.AbstractLattice`](@ref LatticeCore.AbstractLattice)`{D, T}`
+so that every LatticeCore observer, trait, and test-suite helper
+works on quasicrystals as well as on periodic lattices.
+
+# Fields
+
+- `positions::Vector{SVector{D, T}}` — physical positions of every
+  site
+- `tiles::Vector{TileType}` — list of tiles in the tiling (may be
+  empty for 1D lattices or ungenerated tilings)
+- `generation_method::AbstractGenerationMethod` — which algorithm
+  built this instance
+- `parameters::Dict{Symbol, Any}` — free-form parameter bag kept
+  for backwards compatibility with the pre-migration API
+- `bonds::Vector{Bond{D, T}}` — nearest-neighbour bonds, populated
+  by [`build_nearest_neighbor_bonds!`](@ref) or by generation
+  functions that know the local connectivity
+- `nearest_neighbors::Vector{Vector{Int}}` — neighbour adjacency
+  lists, one per site
+- `layout::AbstractSiteLayout` — LatticeCore site layout (defaults
+  to `UniformLayout(IsingSite())`)
+
+`bonds` and `nearest_neighbors` start empty and must be filled in
+with `build_nearest_neighbor_bonds!(data; cutoff)` before Monte
+Carlo observers walk the graph.
+"""
+struct QuasicrystalData{D,T<:AbstractFloat,TileType,L<:AbstractSiteLayout} <:
+       AbstractLattice{D,T}
+    positions::Vector{SVector{D,T}}
     tiles::Vector{TileType}
     generation_method::AbstractGenerationMethod
     parameters::Dict{Symbol,Any}
-    bonds::Vector{Bond}
+    bonds::Vector{Bond{D,T}}
     nearest_neighbors::Vector{Vector{Int}}
+    layout::L
 end
 
-# Helper function to initialize empty bonds and nearest neighbors
-function _init_empty_connectivity(n_positions::Int)
-    bonds = Bond[]
-    nearest_neighbors = Vector{Int}[Int[] for _ in 1:n_positions]
-    return bonds, nearest_neighbors
-end
+# ---- Convenience constructors ---------------------------------------
 
-# Convenience constructor that infers TileType
 function QuasicrystalData{D,T}(
-    positions::Vector{Vector{T}},
+    positions::Vector{SVector{D,T}},
     tiles::Vector{TT},
     method::AbstractGenerationMethod,
-    params::Dict{Symbol,Any},
-) where {D,T,TT}
-    # Default: no bonds or nearest neighbors
-    bonds, nearest_neighbors = _init_empty_connectivity(length(positions))
-    return QuasicrystalData{D,T,TT}(
-        positions, tiles, method, params, bonds, nearest_neighbors
+    params::Dict{Symbol,Any};
+    layout::AbstractSiteLayout=UniformLayout(IsingSite()),
+) where {D,T<:AbstractFloat,TT}
+    n = length(positions)
+    bonds = Bond{D,T}[]
+    nn = [Int[] for _ in 1:n]
+    return QuasicrystalData{D,T,TT,typeof(layout)}(
+        positions, tiles, method, params, bonds, nn, layout
     )
 end
 
-# Constructor with bonds and nearest neighbors
-function QuasicrystalData{D,T}(
-    positions::Vector{Vector{T}},
-    tiles::Vector{TT},
-    method::AbstractGenerationMethod,
-    params::Dict{Symbol,Any},
-    bonds::Vector{Bond},
-    nearest_neighbors::Vector{Vector{Int}},
-) where {D,T,TT}
-    return QuasicrystalData{D,T,TT}(
-        positions, tiles, method, params, bonds, nearest_neighbors
-    )
+# ---- LatticeCore required interface ---------------------------------
+
+LatticeCore.num_sites(data::QuasicrystalData) = length(data.positions)
+
+LatticeCore.position(data::QuasicrystalData, i::Int) = data.positions[i]
+
+LatticeCore.neighbors(data::QuasicrystalData, i::Int) = data.nearest_neighbors[i]
+
+LatticeCore.boundary(::QuasicrystalData{D}) where {D} =
+    LatticeBoundary(ntuple(_ -> OpenAxis(), D), NoModifier())
+
+LatticeCore.site_layout(data::QuasicrystalData) = data.layout
+
+function LatticeCore.size_trait(data::QuasicrystalData)
+    return FiniteSize((length(data.positions),))
 end
 
-"""
-    Tile{D,T}
-Represents a single tile in the quasicrystal pattern.
-- `vertices::Vector{Vector{T}}`: corner positions of the tile
-- `type::Int`: tile type identifier (e.g., fat vs thin rhombus)
-- `center::Vector{T}`: center position of the tile
-"""
-struct Tile{D,T}
-    vertices::Vector{Vector{T}}
-    type::Int
-    center::Vector{T}
-end
+LatticeCore.bonds(data::QuasicrystalData) = data.bonds
 
-export AbstractQuasicrystal, AbstractGenerationMethod
-export ProjectionMethod, SubstitutionMethod
-export QuasicrystalData, Tile
-export GOLDEN_RATIO, ϕ
+# Quasicrystals are aperiodic by construction: they admit no
+# Bravais reciprocal lattice (they have a dense Fourier module
+# instead, which is handled by `LatticeCore.fourier_module`).
+LatticeCore.periodicity(::QuasicrystalData) = Aperiodic()
+LatticeCore.reciprocal_support(::QuasicrystalData) = HasFourierModule()
