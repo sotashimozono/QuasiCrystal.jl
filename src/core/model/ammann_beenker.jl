@@ -67,7 +67,7 @@ function generate_ammann_beenker_projection(
         :n_vertices => length(positions),
         :symmetry => 8,
     )
-    return QuasicrystalData{2,Float64}(positions, tiles, method, params)
+    return QuasicrystalData{2,Float64}(AmmannBeenker(), positions, tiles, method, params)
 end
 
 """
@@ -124,7 +124,7 @@ function generate_ammann_beenker_substitution(
         :n_vertices => length(positions),
         :symmetry => 8,
     )
-    return QuasicrystalData{2,Float64}(positions, tiles, method, params)
+    return QuasicrystalData{2,Float64}(AmmannBeenker(), positions, tiles, method, params)
 end
 
 """
