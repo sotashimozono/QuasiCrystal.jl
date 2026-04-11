@@ -89,6 +89,77 @@ function hyper_reciprocal_lattice(::QuasicrystalData{1,Float64,FibonacciLattice}
     )
 end
 
+# ---- Ammann–Beenker: 4D host, 2D physical, 2D perp ------------------
+
+"""
+    hyper_reciprocal_lattice(qc::QuasicrystalData{2, Float64, AmmannBeenker})
+
+Build the Ammann–Beenker cut-and-project reciprocal structure.
+
+Geometry (matching [`generate_ammann_beenker_projection`](@ref)):
+
+- **Host lattice**: `Z⁴`, so `hyper_basis = 2π · I₄`.
+- **Physical plane `E_∥`**: the four host basis vectors `eₖ`
+  (k = 1..4) project to the star vectors
+  `(cos((k-1)π/4), sin((k-1)π/4))`, giving a 2×4
+  `parallel_proj` whose columns are those star vectors.
+- **Perpendicular plane `E_⊥`**: shifted star vectors with angles
+  `(k-1)π/4 + π/4`. (Matches the generator's current construction
+  — note this is not the canonical Galois-conjugate embedding, but
+  it is the one that is consistent with the points actually
+  produced by the generator.)
+- **Acceptance window**: a square `|y₁|, |y₂| ≤ ½`, modelled as a
+  [`BoxWindow{2}`](@ref).
+
+The resulting `BraggPeakSet` plugs into
+`LatticeCore.momentum_lattice` and composes with
+`structure_factor` just like the Fibonacci version.
+"""
+function hyper_reciprocal_lattice(::QuasicrystalData{2,Float64,AmmannBeenker})
+    T = Float64
+    hyper_basis = SMatrix{4,4,T}(
+        2π, 0, 0, 0,
+        0, 2π, 0, 0,
+        0, 0, 2π, 0,
+        0, 0, 0, 2π,
+    )
+
+    θ = T(π / 4)
+    c0, s0 = cos(zero(T)), sin(zero(T))
+    c1, s1 = cos(θ), sin(θ)
+    c2, s2 = cos(2θ), sin(2θ)
+    c3, s3 = cos(3θ), sin(3θ)
+    c4, s4 = cos(4θ), sin(4θ)
+
+    # Physical star (k = 1..4): angles 0, π/4, π/2, 3π/4.
+    # SMatrix is column-major, so each (col_1, col_2) pair is one
+    # star vector.
+    parallel_proj = SMatrix{2,4,T}(
+        c0, s0,
+        c1, s1,
+        c2, s2,
+        c3, s3,
+    )
+
+    # Perpendicular star: angles π/4, π/2, 3π/4, π — the shifted
+    # choice the generator currently filters with.
+    perp_proj = SMatrix{2,4,T}(
+        c1, s1,
+        c2, s2,
+        c3, s3,
+        c4, s4,
+    )
+
+    # Square acceptance window of half-width 0.5 on each perp axis,
+    # matching `generate_ammann_beenker_projection`'s
+    # `all(abs.(pos_perp) .<= 0.5)` filter.
+    window = BoxWindow(SVector{2,T}(0.5, 0.5))
+
+    return HyperReciprocalLattice{2,4,2,T,typeof(window)}(
+        hyper_basis, parallel_proj, perp_proj, window
+    )
+end
+
 # ---- Bragg peak enumeration -----------------------------------------
 
 """

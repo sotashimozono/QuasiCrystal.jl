@@ -138,7 +138,7 @@ export get_positions, get_bonds, get_nearest_neighbors, num_bonds
 export build_nearest_neighbor_bonds!
 export visualize_quasicrystal_positions
 # Fourier analysis
-export IntervalWindow, window_fourier
+export IntervalWindow, BoxWindow, window_fourier
 export hyper_reciprocal_lattice, bragg_peaks
 
 # Re-exports from LatticeCore
