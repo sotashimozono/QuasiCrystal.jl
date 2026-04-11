@@ -67,3 +67,39 @@ end
 function window_fourier(w::IntervalWindow{T}, q::SVector{1,<:Real}) where {T}
     return window_fourier(w, q[1])
 end
+
+# ---- BoxWindow ------------------------------------------------------
+
+"""
+    BoxWindow{DPerp, T}(half_widths::SVector{DPerp, T})
+
+Axis-aligned hyper-rectangular acceptance window
+`∏ᵢ [-half_widthsᵢ, +half_widthsᵢ]` in `DPerp`-dimensional
+perpendicular space. Used by the Ammann–Beenker point-set generator
+(host `Z⁴`, perpendicular space `R²`, square window).
+
+Its Fourier transform is a product of 1D sincs:
+
+```math
+\\hat{W}(q) \\;=\\; \\prod_{i=1}^{D_\\perp} \\frac{2 \\sin(q_i a_i)}{q_i},
+\\qquad a_i \\equiv \\text{half\\_widths}_i.
+```
+"""
+struct BoxWindow{DPerp,T<:AbstractFloat} <: AcceptanceWindow
+    half_widths::SVector{DPerp,T}
+end
+
+function window_fourier(w::BoxWindow{DPerp,T}, q::SVector{DPerp,<:Real}) where {DPerp,T}
+    result = one(T)
+    for i in 1:DPerp
+        a = w.half_widths[i]
+        qi = T(q[i])
+        qa = qi * a
+        if isapprox(qa, zero(T); atol=1e-12)
+            result *= 2 * a
+        else
+            result *= 2 * sin(qa) / qi
+        end
+    end
+    return result
+end
