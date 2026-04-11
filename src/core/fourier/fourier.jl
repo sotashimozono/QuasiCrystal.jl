@@ -66,9 +66,7 @@ Geometry:
 `ϕ = (1 + √5)/2` is the golden ratio (`LatticeCore.ϕ` is also
 re-exported through QuasiCrystal).
 """
-function hyper_reciprocal_lattice(
-    ::QuasicrystalData{1,Float64,FibonacciLattice}
-)
+function hyper_reciprocal_lattice(::QuasicrystalData{1,Float64,FibonacciLattice})
     T = Float64
 
     # Host lattice is Z²; its reciprocal is 2π·Z².
@@ -112,16 +110,12 @@ bound `n_max` on the integer coordinates is chosen conservatively
 from the operator norm of `parallel_proj` so that nothing bright
 slips through unnoticed.
 """
-function bragg_peaks(
-    qc::QuasicrystalData; kmax::Real, intensity_cutoff::Real=0.0
-)
+function bragg_peaks(qc::QuasicrystalData; kmax::Real, intensity_cutoff::Real=0.0)
     return _bragg_peaks_impl(hyper_reciprocal_lattice(qc), kmax, intensity_cutoff)
 end
 
 function _bragg_peaks_impl(
-    hrl::HyperReciprocalLattice{DPhys,DHyper,DPerp,T,W},
-    kmax::Real,
-    intensity_cutoff::Real,
+    hrl::HyperReciprocalLattice{DPhys,DHyper,DPerp,T,W}, kmax::Real, intensity_cutoff::Real
 ) where {DPhys,DHyper,DPerp,T,W}
     par = hrl.parallel_proj
     perp = hrl.perp_proj
