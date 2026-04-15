@@ -96,21 +96,27 @@ function generate_penrose_substitution(
 )
     angle_fat = deg2rad(72)
 
-    initial_tiles = Tile{2,Float64}[]
+    initial_tris = RobTri[]
     for i in 0:4
         angle = i * 2π / 5
         v1 = SVector(0.0, 0.0)
         v2 = SVector(cos(angle), sin(angle))
         v3 = v2 + SVector(cos(angle + angle_fat), sin(angle + angle_fat))
         v4 = SVector(cos(angle + angle_fat), sin(angle + angle_fat))
-        center = (v1 + v2 + v3 + v4) / 4
-        push!(initial_tiles, Tile{2,Float64}([v1, v2, v3, v4], 1, center))
+        
+        # A Fat rhombus (72, 108) consists of two Obtuse (type 2) triangles
+        # sharing their long edge (v1-v3 in our setup).
+        push!(initial_tris, RobTri(2, 1, v2, v3, v1))
+        push!(initial_tris, RobTri(2, -1, v4, v1, v3))
     end
 
-    tiles = initial_tiles
+    triangles = initial_tris
     for _ in 1:generations
-        tiles = inflate_penrose_tiles(tiles, method.algorithm)
+        triangles = _inflate_rob_tris(triangles)
     end
+    
+    # Pair triangles into rhombi at the very end to avoid erosion
+    tiles = _pair_rob_tris(triangles)
 
     # Collect unique vertices from every tile.
     position_set = Set{SVector{2,Float64}}()
@@ -144,42 +150,15 @@ end
 
 function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation)
     # Decompose into Robinson Triangles
-    # Type 1 = Acute (half-kite), Type 2 = Obtuse (half-dart)
-    # A Fat rhombus (type 1) consists of two Obtuse triangles
-    # A Thin rhombus (type 2) consists of two Acute triangles
-    # But wait, earlier derivation:
-    # Splitting Fat rhombus (72, 108) along long diagonal gives two Obtuse (108, 36, 36)
-    # Splitting Thin rhombus (36, 144) along short diagonal gives two Acute (36, 72, 72)
-    # Actually, standard matching rules:
-    # A Fat rhombus is 2 Acute triangles (sides 1, 1, 1/ϕ) sharing long edge! 
-    # Wait, sides of Acute are 1, 1, 1/ϕ. If they share 1, they form Rhombus with sides 1, 1, 1/ϕ, 1/ϕ. No!
-    # They must share the SHORT edge (1/ϕ). Then sides are 1, 1, 1, 1. Angle at apex is 36+36=72 or just 36. 
-    # If they share short edge (1/ϕ), the other edges are 1. So it's a Rhombus!
-    # The angle at the shared edge is 72+72=144. No, an Acute triangle has angles 36, 72, 72. 
-    # If joined at the short edge (opposite to 36), the angles at the endpoints of the short edge are 72+72=144.
-    # The other two angles are 36 and 36. So this makes a THIN rhombus (36, 144)!
-    # Thus, two Acute triangles form a Thin rhombus.
-    
-    # Obtuse triangle: sides 1/ϕ, 1/ϕ, 1. Angles 108, 36, 36.
-    # If joined at the LONG edge (1), the other edges are 1/ϕ. Lengths are all 1/ϕ.
-    # It forms a Rhombus with angles 108 and 36+36=72.
-    # This is a FAT rhombus!
-    
-    # Let's perform the deflation on the components:
-    
     triangles = RobTri[]
-    
     for tile in tiles
         v = tile.vertices
-        # Assume vertices are properly ordered.
         if tile.type == 1 # Fat rhombus (108, 72)
             # Find the acute angles (72). They are at opposite vertices.
             # Long diagonal connects the 72-degree vertices.
-            # Wait, Obtuse triangle base is the long edge.
             diagonal_sq1 = sum(abs2, v[1] - v[3])
             diagonal_sq2 = sum(abs2, v[2] - v[4])
             if diagonal_sq1 > diagonal_sq2
-                # v1-v3 is long edge. Base is long.
                 push!(triangles, RobTri(2, 1, v[2], v[3], v[1]))
                 push!(triangles, RobTri(2, -1, v[4], v[1], v[3]))
             else
@@ -190,7 +169,6 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
             diagonal_sq1 = sum(abs2, v[1] - v[3])
             diagonal_sq2 = sum(abs2, v[2] - v[4])
             if diagonal_sq1 < diagonal_sq2
-                # v1-v3 is short edge. Base is short.
                 push!(triangles, RobTri(1, 1, v[2], v[3], v[1]))
                 push!(triangles, RobTri(1, -1, v[4], v[1], v[3]))
             else
@@ -200,11 +178,21 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
         end
     end
     
+    inflated = _inflate_rob_tris(triangles)
+    return _pair_rob_tris(inflated)
+end
+
+"""
+    _inflate_rob_tris(triangles::Vector{RobTri}) → Vector{RobTri}
+
+Internal helper to deflate one set of Robinson triangles and scale up by ϕ.
+Preserves all fragments (erosion-free).
+"""
+function _inflate_rob_tris(triangles::Vector{RobTri})
     new_tris = RobTri[]
     for t in triangles
         a, b, c = t.a, t.b, t.c
-        if t.type == 1
-            # Acute deflation
+        if t.type == 1 # Acute
             if t.parity == 1
                 p = a + (b - a) / ϕ
                 push!(new_tris, RobTri(1, -1, c, p, b))
@@ -214,8 +202,7 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
                 push!(new_tris, RobTri(1, 1, b, p, c))
                 push!(new_tris, RobTri(2, -1, p, b, a))
             end
-        else
-            # Obtuse deflation
+        else # Obtuse
             if t.parity == 1
                 p = b + (c - b) / ϕ
                 push!(new_tris, RobTri(1, 1, b, p, a))
@@ -229,19 +216,24 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
     end
     
     # Scale up by phi
-    scaled_tris = RobTri[]
+    scaled = RobTri[]
     for t in new_tris
-        push!(scaled_tris, RobTri(t.type, t.parity, t.a * ϕ, t.b * ϕ, t.c * ϕ))
+        push!(scaled, RobTri(t.type, t.parity, t.a * ϕ, t.b * ϕ, t.c * ϕ))
     end
-    
-    # Pair them up!
-    # Fat rhombi come from two Obtuse sharing their long edge (BC)
-    # Thin rhombi come from two Acute sharing their short edge (BC)
-    
+    return scaled
+end
+
+"""
+    _pair_rob_tris(triangles::Vector{RobTri}) → Vector{Tile}
+
+Internal helper to pair compatible Robinson triangles into fat/thin rhombi.
+Triangles without a neighbor on their base (BC) are dropped.
+"""
+function _pair_rob_tris(triangles::Vector{RobTri})
     new_tiles = Tile{2, Float64}[]
     edge_dict = Dict{Tuple{Float64, Float64}, Vector{RobTri}}()
     
-    for t in scaled_tris
+    for t in triangles
         mid = (t.b + t.c) / 2
         # Use rounding for stable dictionary keys
         key = (round(mid[1], digits=5), round(mid[2], digits=5))
@@ -256,19 +248,18 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
         if length(list) == 2
             t1, t2 = list[1], list[2]
             if t1.type == 1 && t2.type == 1
-                # Thin rhombus
+                # Thin rhombus (two Acute triangles)
                 v = [t1.a, t1.b, t2.a, t1.c]
                 center = sum(v) / 4.0
                 push!(new_tiles, Tile{2, Float64}(v, 2, center))  # type 2 is Thin
             elseif t1.type == 2 && t2.type == 2
-                # Fat rhombus
+                # Fat rhombus (two Obtuse triangles)
                 v = [t1.a, t1.b, t2.a, t1.c]
                 center = sum(v) / 4.0
                 push!(new_tiles, Tile{2, Float64}(v, 1, center))  # type 1 is Fat
             end
         end
     end
-    
     return new_tiles
 end
 
