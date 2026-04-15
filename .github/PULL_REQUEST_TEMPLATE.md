@@ -19,7 +19,7 @@ Fixed: #  (if any)
 - [ ] 📖 **Documentation** (`documentation`)
 - [ ] 🧰 **Maintenance** (`chore` or `refactor`)
 - [ ] 💥 **Breaking change** (`breaking`) — forces a minor bump and a
-  `## Breaking changes` section in the drafted release notes. Tick this
+  breaking-changes section in the drafted release notes. Tick this
   whenever you rename / remove public API, change field layouts, or
   otherwise require a downstream code change.
 
