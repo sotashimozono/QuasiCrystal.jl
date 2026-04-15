@@ -56,12 +56,7 @@ function _materialise_plaquettes(data::QuasicrystalData{D,T}) where {D,T}
     isempty(data.tiles) && return out
     for tile in data.tiles
         vertex_ids = _resolve_tile_vertices(data, tile)
-        push!(
-            out,
-            Plaquette{D,T}(
-                vertex_ids, tile.center, Symbol("tile_type_", tile.type)
-            ),
-        )
+        push!(out, Plaquette{D,T}(vertex_ids, tile.center, Symbol("tile_type_", tile.type)))
     end
     return out
 end
@@ -88,7 +83,9 @@ function _resolve_tile_vertices(data::QuasicrystalData{D,T}, tile::Tile{D,T}) wh
     return out
 end
 
-function _find_position_index(positions::Vector{SVector{D,T}}, target::SVector{D,T}) where {D,T}
+function _find_position_index(
+    positions::Vector{SVector{D,T}}, target::SVector{D,T}
+) where {D,T}
     for (i, p) in enumerate(positions)
         if norm(p - target) < POSITION_TOLERANCE
             return i
@@ -120,9 +117,7 @@ function LatticeCore.element_position(data::QuasicrystalData, ::BondCenter, i::I
     return bond_center(data, data.bonds[i])
 end
 
-function LatticeCore.element_position(
-    data::QuasicrystalData, ::PlaquetteCenter, i::Int
-)
+function LatticeCore.element_position(data::QuasicrystalData, ::PlaquetteCenter, i::Int)
     return plaquettes(data)[i].center
 end
 
@@ -152,9 +147,7 @@ function LatticeCore.neighbors(
     end
 end
 
-function _neighbors_by_shell(
-    data::QuasicrystalData{D,T}, i::Int, k::Int
-) where {D,T}
+function _neighbors_by_shell(data::QuasicrystalData{D,T}, i::Int, k::Int) where {D,T}
     N = num_sites(data)
     p_i = position(data, i)
     dist_map = Dict{Int,T}()
@@ -201,9 +194,5 @@ function bond_type(data::QuasicrystalData, i::Int, j::Int)
             return b.type
         end
     end
-    throw(
-        ArgumentError(
-            "no bond between sites $i and $j on $(typeof(data).name.name)"
-        ),
-    )
+    throw(ArgumentError("no bond between sites $i and $j on $(typeof(data).name.name)"))
 end

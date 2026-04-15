@@ -97,7 +97,7 @@ function generate_penrose_substitution(
     # Start with a "Sun" of 5 fat rhombi
     # Each fat rhombus is spanned by (e_i, e_{i+1})
     star = [SVector(cos(i * 2π / 5), sin(i * 2π / 5)) for i in 0:4]
-    
+
     current_rhombi = []
     for i in 0:4
         # (index1, index2, offset)
@@ -110,30 +110,30 @@ function generate_penrose_substitution(
             # Grid substitution: e_i -> e_{i-1} + e_i + e_{i+1}
             # The tile (e_i, e_j) is replaced by 9 tiles (e_a, e_b)
             # a in {i-1, i, i+1}, b in {j-1, j, j+1}
-            
+
             # Sub-vectors for i
-            U = [star[mod(i-1, 5) + 1], star[i+1], star[mod(i+1, 5) + 1]]
+            U = [star[mod(i - 1, 5) + 1], star[i + 1], star[mod(i + 1, 5) + 1]]
             # Sub-vectors for j
-            V = [star[mod(j-1, 5) + 1], star[j+1], star[mod(j+1, 5) + 1]]
-            
+            V = [star[mod(j - 1, 5) + 1], star[j + 1], star[mod(j + 1, 5) + 1]]
+
             # Scale old offset
             w_scaled = w * ϕ
-            
+
             for (ai, u) in enumerate(U), (bi, v) in enumerate(V)
                 # Position of sub-tile (ai, bi)
                 # offset is sum of previous vectors in the expansion
                 pos = w_scaled
-                for ak in 1:(ai-1)
+                for ak in 1:(ai - 1)
                     pos += U[ak]
                 end
-                for bk in 1:(bi-1)
+                for bk in 1:(bi - 1)
                     pos += V[bk]
                 end
-                
+
                 # New indices
                 idx_a = mod(i + (ai-2), 5)
                 idx_b = mod(j + (bi-2), 5)
-                
+
                 if idx_a != idx_b
                     push!(new_rhombi, (idx_a, idx_b, pos))
                 end
@@ -141,30 +141,30 @@ function generate_penrose_substitution(
         end
         current_rhombi = new_rhombi
     end
-    
+
     # Convert to Tiles and deduplicate
-    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
+    tile_dict = Dict{Tuple{Int,Int},Tile{2,Float64}}()
     star_vectors = star
     for (i, j, w) in current_rhombi
         v1 = w
-        v2 = w + star_vectors[i+1]
-        v3 = w + star_vectors[i+1] + star_vectors[j+1]
-        v4 = w + star_vectors[j+1]
-        
+        v2 = w + star_vectors[i + 1]
+        v3 = w + star_vectors[i + 1] + star_vectors[j + 1]
+        v4 = w + star_vectors[j + 1]
+
         # Canonical key for deduplication: sorted vertices
         # Or just use the center since it's a rhombus tiling
         center = (v1 + v3) / 2
         key = (round(Int, center[1]*1e5), round(Int, center[2]*1e5))
-        
+
         # Determine type: Fat if |i-j| == 1 or 4, Thin if |i-j| == 2 or 3
         diff = mod(abs(i - j), 5)
         type = (diff == 1 || diff == 4) ? 1 : 2
-        
+
         if !haskey(tile_dict, key)
-            tile_dict[key] = Tile{2, Float64}([v1, v2, v3, v4], type, center)
+            tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, center)
         end
     end
-    
+
     tiles = collect(values(tile_dict))
 
     # Collect unique vertices
@@ -172,7 +172,7 @@ function generate_penrose_substitution(
     for tile in tiles
         for v in tile.vertices
             # Round for set stable
-            rv = SVector(round(v[1], digits=8), round(v[2], digits=8))
+            rv = SVector(round(v[1]; digits=8), round(v[2]; digits=8))
             push!(position_set, rv)
         end
     end
@@ -194,15 +194,17 @@ Apply the Penrose substitution rules tile-by-tile.
 struct RobTri
     type::Int
     parity::Int # 1 for Left, -1 for Right
-    a::SVector{2, Float64}
-    b::SVector{2, Float64}
-    c::SVector{2, Float64}
+    a::SVector{2,Float64}
+    b::SVector{2,Float64}
+    c::SVector{2,Float64}
 end
 
-function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation)
+function inflate_penrose_tiles(
+    tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation
+)
     # For now, we reuse the robust logic by identifying star indices from tiles
     star = [SVector(cos(i * 2π / 5), sin(i * 2π / 5)) for i in 0:4]
-    
+
     current_rhombi = []
     for tile in tiles
         v = tile.vertices
@@ -210,37 +212,41 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
         v1 = v[1]
         e1 = v[2] - v1
         e2 = v[4] - v1
-        
+
         # Find closest star indices
         i = -1
         j = -1
         for k in 0:4
-            if norm(e1 - star[k+1]) < 1e-4
+            if norm(e1 - star[k + 1]) < 1e-4
                 i = k
-            elseif norm(e1 + star[k+1]) < 1e-4
+            elseif norm(e1 + star[k + 1]) < 1e-4
                 # Handle mirrored/inverted tiles if necessary
                 # In P3 they are usually aligned to star
             end
-            if norm(e2 - star[k+1]) < 1e-4
+            if norm(e2 - star[k + 1]) < 1e-4
                 j = k
             end
         end
-        
+
         if i != -1 && j != -1
             push!(current_rhombi, (i, j, v1))
         end
     end
-    
+
     # Apply one generation of vector inflation
     new_rhombi = []
     for (i, j, w) in current_rhombi
-        U = [star[mod(i-1, 5) + 1], star[i+1], star[mod(i+1, 5) + 1]]
-        V = [star[mod(j-1, 5) + 1], star[j+1], star[mod(j+1, 5) + 1]]
+        U = [star[mod(i - 1, 5) + 1], star[i + 1], star[mod(i + 1, 5) + 1]]
+        V = [star[mod(j - 1, 5) + 1], star[j + 1], star[mod(j + 1, 5) + 1]]
         w_scaled = w * ϕ
         for (ai, u) in enumerate(U), (bi, v) in enumerate(V)
             pos = w_scaled
-            for ak in 1:(ai-1) pos += U[ak] end
-            for bk in 1:(bi-1) pos += V[bk] end
+            for ak in 1:(ai - 1)
+                pos += U[ak]
+            end
+            for bk in 1:(bi - 1)
+                pos += V[bk]
+            end
             idx_a = mod(i + (ai-2), 5)
             idx_b = mod(j + (bi-2), 5)
             if idx_a != idx_b
@@ -248,17 +254,17 @@ function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTria
             end
         end
     end
-    
+
     # Deduplicate and return Tiles
-    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
+    tile_dict = Dict{Tuple{Int,Int},Tile{2,Float64}}()
     for (i, j, w) in new_rhombi
-        v1, v2, v3, v4 = w, w + star[i+1], w + star[i+1] + star[j+1], w + star[j+1]
+        v1, v2, v3, v4 = w, w + star[i + 1], w + star[i + 1] + star[j + 1], w + star[j + 1]
         c = (v1 + v3) / 2
         key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
         diff = mod(abs(i - j), 5)
         type = (diff == 1 || diff == 4) ? 1 : 2
         if !haskey(tile_dict, key)
-            tile_dict[key] = Tile{2, Float64}([v1, v2, v3, v4], type, c)
+            tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, c)
         end
     end
     return collect(values(tile_dict))
@@ -266,7 +272,9 @@ end
 
 # Keep internal helpers for backward compatibility if needed, but they are no longer used by main loop
 
-inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DefaultSubstitution) = inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
+function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DefaultSubstitution)
+    inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
+end
 
 # Placeholder for direct tile inflation
 function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DirectTileInflation)
@@ -282,13 +290,13 @@ export vertex_angles, vertex_configuration
 Compute the internal angles of the tiles surrounding the vertex `v_idx` in degrees.
 Returns a sorted vector of integers representing the angles (e.g., `[72, 72, 72, 72, 72]`).
 """
-function vertex_angles(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int)
+function vertex_angles(data::QuasicrystalData{2,Float64,PenroseP3}, v_idx::Int)
     v_pos = data.positions[v_idx]
-    
+
     # We find all tiles that contain v_pos
     _ensure_plaquettes!(data)
     plaqs = data.parameters[:plaquettes]
-    
+
     angles = Int[]
     for p in plaqs
         if v_idx in p.vertices
@@ -297,14 +305,14 @@ function vertex_angles(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int
             N = length(p.vertices)
             prev_idx = p.vertices[mod1(idx_in_p - 1, N)]
             next_idx = p.vertices[mod1(idx_in_p + 1, N)]
-            
+
             p_prev = data.positions[prev_idx]
             p_next = data.positions[next_idx]
-            
+
             # Vectors from v_pos
             vec1 = p_prev - v_pos
             vec2 = p_next - v_pos
-            
+
             # Compute angle
             cos_theta = dot(vec1, vec2) / (norm(vec1) * norm(vec2))
             cos_theta = clamp(cos_theta, -1.0, 1.0)
@@ -322,14 +330,14 @@ Identify the vertex configuration around `v_idx` using the 8 standard P3 vertex 
 Standard combinations (sorted degrees summing to 360):
 Returns the signature or standard name if known.
 """
-function vertex_configuration(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int)
+function vertex_configuration(data::QuasicrystalData{2,Float64,PenroseP3}, v_idx::Int)
     angles = vertex_angles(data, v_idx)
-    
+
     # The sum of angles must be 360 for interior vertices.
     if sum(angles) != 360
         return :Boundary  # Not fully surrounded
     end
-    
+
     # Map from sorted angle lists to Conway/De Bruijn P3 identifiers
     if angles == [72, 72, 72, 72, 72]
         return :Sun
@@ -349,5 +357,3 @@ function vertex_configuration(data::QuasicrystalData{2, Float64, PenroseP3}, v_i
         return Symbol("V_", join(angles, "_"))
     end
 end
-
-

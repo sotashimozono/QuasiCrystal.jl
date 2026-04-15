@@ -87,7 +87,7 @@ function generate_ammann_beenker_substitution(
 )
     # Start with an octagonal wreath of 8 rhombi
     star = [SVector(cos(i * π / 4), sin(i * π / 4)) for i in 0:7]
-    
+
     current_rhombi = []
     for i in 0:7
         # Tile spanned by (e_i, e_{i+1})
@@ -95,27 +95,31 @@ function generate_ammann_beenker_substitution(
     end
 
     λ = 1 + sqrt(2)
-    
+
     for _ in 1:generations
         new_rhombi = []
         for (i, j, w) in current_rhombi
             # Grid substitution: e_i -> e_{i-1} + e_i + e_{i+1}
             # The tile (e_i, e_j) is replaced by 9 tiles (e_a, e_b)
             # a in {i-1, i, i+1}, b in {j-1, j, j+1}
-            
-            U = [star[mod(i-1, 8) + 1], star[i+1], star[mod(i+1, 8) + 1]]
-            V = [star[mod(j-1, 8) + 1], star[j+1], star[mod(j+1, 8) + 1]]
-            
+
+            U = [star[mod(i - 1, 8) + 1], star[i + 1], star[mod(i + 1, 8) + 1]]
+            V = [star[mod(j - 1, 8) + 1], star[j + 1], star[mod(j + 1, 8) + 1]]
+
             w_scaled = w * λ
-            
+
             for (ai, u) in enumerate(U), (bi, v) in enumerate(V)
                 pos = w_scaled
-                for ak in 1:(ai-1) pos += U[ak] end
-                for bk in 1:(bi-1) pos += V[bk] end
-                
+                for ak in 1:(ai - 1)
+                    pos += U[ak]
+                end
+                for bk in 1:(bi - 1)
+                    pos += V[bk]
+                end
+
                 idx_a = mod(i + (ai-2), 8)
                 idx_b = mod(j + (bi-2), 8)
-                
+
                 if idx_a != idx_b && mod(abs(idx_a - idx_b), 8) != 4
                     push!(new_rhombi, (idx_a, idx_b, pos))
                 end
@@ -123,30 +127,30 @@ function generate_ammann_beenker_substitution(
         end
         current_rhombi = new_rhombi
     end
-    
+
     # Convert to Tiles and deduplicate
-    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
+    tile_dict = Dict{Tuple{Int,Int},Tile{2,Float64}}()
     for (i, j, w) in current_rhombi
-        v1, v2, v3, v4 = w, w + star[i+1], w + star[i+1] + star[j+1], w + star[j+1]
+        v1, v2, v3, v4 = w, w + star[i + 1], w + star[i + 1] + star[j + 1], w + star[j + 1]
         c = (v1 + v3) / 2
         key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
-        
+
         # Determine type: Square if |i-j| == 2, Rhombus if |i-j| == 1 or 3
         diff = mod(abs(i - j), 8)
         type = (diff == 2 || diff == 6) ? 1 : 2 # type 1 is Square, 2 is Rhombus
-        
+
         if !haskey(tile_dict, key)
-            tile_dict[key] = Tile{2, Float64}([v1, v2, v3, v4], type, c)
+            tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, c)
         end
     end
-    
+
     tiles = collect(values(tile_dict))
 
     # Collect unique vertices
     position_set = Set{SVector{2,Float64}}()
     for tile in tiles
         for v in tile.vertices
-            rv = SVector(round(v[1], digits=8), round(v[2], digits=8))
+            rv = SVector(round(v[1]; digits=8), round(v[2]; digits=8))
             push!(position_set, rv)
         end
     end
@@ -170,7 +174,7 @@ function inflate_ammann_beenker_tiles(tiles::Vector{Tile{2,Float64}})
     # Robust rule for AB: λe₁ = e₁₋₁ + e₁ + e₁₊₁ where λ = 1+√2
     star = [SVector(cos(i * π / 4), sin(i * π / 4)) for i in 0:7]
     λ = 1 + sqrt(2)
-    
+
     current_rhombi = []
     for tile in tiles
         v = tile.vertices
@@ -178,37 +182,47 @@ function inflate_ammann_beenker_tiles(tiles::Vector{Tile{2,Float64}})
         e1, e2 = v[2] - v1, v[4] - v1
         i = j = -1
         for k in 0:7
-            if norm(e1 - star[k+1]) < 1e-4 i = k end
-            if norm(e2 - star[k+1]) < 1e-4 j = k end
+            if norm(e1 - star[k + 1]) < 1e-4
+                i = k
+            end
+            if norm(e2 - star[k + 1]) < 1e-4
+                j = k
+            end
         end
-        if i != -1 && j != -1 push!(current_rhombi, (i, j, v1)) end
+        if i != -1 && j != -1
+            push!(current_rhombi, (i, j, v1))
+        end
     end
-    
+
     new_rhombi = []
     for (i, j, w) in current_rhombi
-        U = [star[mod(i-1, 8) + 1], star[i+1], star[mod(i+1, 8) + 1]]
-        V = [star[mod(j-1, 8) + 1], star[j+1], star[mod(j+1, 8) + 1]]
+        U = [star[mod(i - 1, 8) + 1], star[i + 1], star[mod(i + 1, 8) + 1]]
+        V = [star[mod(j - 1, 8) + 1], star[j + 1], star[mod(j + 1, 8) + 1]]
         w_scaled = w * λ
         for (ai, u) in enumerate(U), (bi, v) in enumerate(V)
             pos = w_scaled
-            for ak in 1:(ai-1) pos += U[ak] end
-            for bk in 1:(bi-1) pos += V[bk] end
+            for ak in 1:(ai - 1)
+                pos += U[ak]
+            end
+            for bk in 1:(bi - 1)
+                pos += V[bk]
+            end
             idx_a, idx_b = mod(i + (ai-2), 8), mod(j + (bi-2), 8)
             if idx_a != idx_b && mod(abs(idx_a - idx_b), 8) != 4
                 push!(new_rhombi, (idx_a, idx_b, pos))
             end
         end
     end
-    
-    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
+
+    tile_dict = Dict{Tuple{Int,Int},Tile{2,Float64}}()
     for (i, j, w) in new_rhombi
-        v1, v2, v3, v4 = w, w + star[i+1], w + star[i+1] + star[j+1], w + star[j+1]
+        v1, v2, v3, v4 = w, w + star[i + 1], w + star[i + 1] + star[j + 1], w + star[j + 1]
         c = (v1 + v3) / 2
         key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
         diff = mod(abs(i - j), 8)
         type = (diff == 2 || diff == 6) ? 1 : 2
         if !haskey(tile_dict, key)
-            tile_dict[key] = Tile{2, Float64}([v1, v2, v3, v4], type, c)
+            tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, c)
         end
     end
     return collect(values(tile_dict))

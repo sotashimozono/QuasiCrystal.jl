@@ -137,7 +137,8 @@ include("utils/visualization.jl")
 # QuasiCrystal-local types
 export AbstractQuasicrystal, AbstractGenerationMethod
 export ProjectionMethod, SubstitutionMethod
-export AbstractSubstitutionAlgorithm, DefaultSubstitution, RobinsonTriangleInflation, DirectTileInflation
+export AbstractSubstitutionAlgorithm,
+    DefaultSubstitution, RobinsonTriangleInflation, DirectTileInflation
 export QuasicrystalData, Tile
 export vertex_angles, vertex_configuration
 export GOLDEN_RATIO, ϕ
