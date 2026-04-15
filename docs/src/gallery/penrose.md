@@ -21,16 +21,17 @@ qc = generate_penrose_projection(8.0)
 plot_lattice(qc; title="Penrose P3 ($(num_sites(qc)) sites)")
 ```
 
-## Reciprocal space — Bragg peaks
+## Substitution Method
 
-The diffraction pattern is the clearest visual check of the
-whole Fourier stack: the five physical star vectors are a
-$C_5$ orbit, and the Bragg peak set must be closed under 72°
-rotation about Γ. The plot below shows the ten-fold symmetric
-pattern (C₅ combined with the even parity
-$I(-k) = I(k)$) that results.
+An alternative way to generate Penrose tilings is via substitution rules (L-systems or matching rules). A cluster (such as a "Sun" configuration of 5 rhombi) is repeatedly deflated and rescaled, creating a larger region of the exact quasiperiodic sequence.
 
-![Penrose P3 diffraction pattern](../assets/figures/penrose_diffraction.png)
+![Penrose Substitution](../assets/figures/penrose_substitution.png)
+
+## Diffraction Pattern
+
+The structure factor confirms the sharp, dense Bragg peaks characteristic of quasi-periodic order, forming a classic 10-fold symmetric diffraction pattern.
+
+![Penrose Diffraction](../assets/figures/penrose_diffraction.png)
 
 ```julia
 peaks = bragg_peaks(qc; kmax = 8.0, intensity_cutoff = 1e-4)
