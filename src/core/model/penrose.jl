@@ -109,7 +109,7 @@ function generate_penrose_substitution(
 
     tiles = initial_tiles
     for _ in 1:generations
-        tiles = inflate_penrose_tiles(tiles)
+        tiles = inflate_penrose_tiles(tiles, method.algorithm)
     end
 
     # Collect unique vertices from every tile.
@@ -130,32 +130,230 @@ function generate_penrose_substitution(
 end
 
 """
-    inflate_penrose_tiles(tiles::Vector{Tile{2, Float64}})
+    inflate_penrose_tiles(tiles::Vector{Tile{2, Float64}}, alg::AbstractSubstitutionAlgorithm)
 
-Apply the (placeholder) Penrose substitution rules tile-by-tile.
-See the note in [`generate_penrose_substitution`](@ref) — the
-current implementation scales rather than subdivides.
+Apply the Penrose substitution rules tile-by-tile.
 """
-function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}})
-    new_tiles = Tile{2,Float64}[]
+struct RobTri
+    type::Int
+    parity::Int # 1 for Left, -1 for Right
+    a::SVector{2, Float64}
+    b::SVector{2, Float64}
+    c::SVector{2, Float64}
+end
+
+function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation)
+    # Decompose into Robinson Triangles
+    # Type 1 = Acute (half-kite), Type 2 = Obtuse (half-dart)
+    # A Fat rhombus (type 1) consists of two Obtuse triangles
+    # A Thin rhombus (type 2) consists of two Acute triangles
+    # But wait, earlier derivation:
+    # Splitting Fat rhombus (72, 108) along long diagonal gives two Obtuse (108, 36, 36)
+    # Splitting Thin rhombus (36, 144) along short diagonal gives two Acute (36, 72, 72)
+    # Actually, standard matching rules:
+    # A Fat rhombus is 2 Acute triangles (sides 1, 1, 1/ϕ) sharing long edge! 
+    # Wait, sides of Acute are 1, 1, 1/ϕ. If they share 1, they form Rhombus with sides 1, 1, 1/ϕ, 1/ϕ. No!
+    # They must share the SHORT edge (1/ϕ). Then sides are 1, 1, 1, 1. Angle at apex is 36+36=72 or just 36. 
+    # If they share short edge (1/ϕ), the other edges are 1. So it's a Rhombus!
+    # The angle at the shared edge is 72+72=144. No, an Acute triangle has angles 36, 72, 72. 
+    # If joined at the short edge (opposite to 36), the angles at the endpoints of the short edge are 72+72=144.
+    # The other two angles are 36 and 36. So this makes a THIN rhombus (36, 144)!
+    # Thus, two Acute triangles form a Thin rhombus.
+    
+    # Obtuse triangle: sides 1/ϕ, 1/ϕ, 1. Angles 108, 36, 36.
+    # If joined at the LONG edge (1), the other edges are 1/ϕ. Lengths are all 1/ϕ.
+    # It forms a Rhombus with angles 108 and 36+36=72.
+    # This is a FAT rhombus!
+    
+    # Let's perform the deflation on the components:
+    
+    triangles = RobTri[]
+    
     for tile in tiles
-        if tile.type == 1
-            append!(new_tiles, inflate_fat_rhombus(tile))
-        else
-            append!(new_tiles, inflate_thin_rhombus(tile))
+        v = tile.vertices
+        # Assume vertices are properly ordered.
+        if tile.type == 1 # Fat rhombus (108, 72)
+            # Find the acute angles (72). They are at opposite vertices.
+            # Long diagonal connects the 72-degree vertices.
+            # Wait, Obtuse triangle base is the long edge.
+            diagonal_sq1 = sum(abs2, v[1] - v[3])
+            diagonal_sq2 = sum(abs2, v[2] - v[4])
+            if diagonal_sq1 > diagonal_sq2
+                # v1-v3 is long edge. Base is long.
+                push!(triangles, RobTri(2, 1, v[2], v[3], v[1]))
+                push!(triangles, RobTri(2, -1, v[4], v[1], v[3]))
+            else
+                push!(triangles, RobTri(2, 1, v[1], v[2], v[4]))
+                push!(triangles, RobTri(2, -1, v[3], v[4], v[2]))
+            end
+        else # Thin rhombus (144, 36)
+            diagonal_sq1 = sum(abs2, v[1] - v[3])
+            diagonal_sq2 = sum(abs2, v[2] - v[4])
+            if diagonal_sq1 < diagonal_sq2
+                # v1-v3 is short edge. Base is short.
+                push!(triangles, RobTri(1, 1, v[2], v[3], v[1]))
+                push!(triangles, RobTri(1, -1, v[4], v[1], v[3]))
+            else
+                push!(triangles, RobTri(1, 1, v[1], v[2], v[4]))
+                push!(triangles, RobTri(1, -1, v[3], v[4], v[2]))
+            end
         end
     end
+    
+    new_tris = RobTri[]
+    for t in triangles
+        a, b, c = t.a, t.b, t.c
+        if t.type == 1
+            # Acute deflation
+            if t.parity == 1
+                p = a + (b - a) / ϕ
+                push!(new_tris, RobTri(1, -1, c, p, b))
+                push!(new_tris, RobTri(2, 1, p, c, a))
+            else
+                p = a + (c - a) / ϕ
+                push!(new_tris, RobTri(1, 1, b, p, c))
+                push!(new_tris, RobTri(2, -1, p, b, a))
+            end
+        else
+            # Obtuse deflation
+            if t.parity == 1
+                p = b + (c - b) / ϕ
+                push!(new_tris, RobTri(1, 1, b, p, a))
+                push!(new_tris, RobTri(2, -1, p, a, c))
+            else
+                p = c + (b - c) / ϕ
+                push!(new_tris, RobTri(1, -1, c, p, a))
+                push!(new_tris, RobTri(2, 1, p, a, b))
+            end
+        end
+    end
+    
+    # Scale up by phi
+    scaled_tris = RobTri[]
+    for t in new_tris
+        push!(scaled_tris, RobTri(t.type, t.parity, t.a * ϕ, t.b * ϕ, t.c * ϕ))
+    end
+    
+    # Pair them up!
+    # Fat rhombi come from two Obtuse sharing their long edge (BC)
+    # Thin rhombi come from two Acute sharing their short edge (BC)
+    
+    new_tiles = Tile{2, Float64}[]
+    edge_dict = Dict{Tuple{Float64, Float64}, Vector{RobTri}}()
+    
+    for t in scaled_tris
+        mid = (t.b + t.c) / 2
+        # Use rounding for stable dictionary keys
+        key = (round(mid[1], digits=5), round(mid[2], digits=5))
+        if !haskey(edge_dict, key)
+            edge_dict[key] = [t]
+        else
+            push!(edge_dict[key], t)
+        end
+    end
+    
+    for (key, list) in edge_dict
+        if length(list) == 2
+            t1, t2 = list[1], list[2]
+            if t1.type == 1 && t2.type == 1
+                # Thin rhombus
+                v = [t1.a, t1.b, t2.a, t1.c]
+                center = sum(v) / 4.0
+                push!(new_tiles, Tile{2, Float64}(v, 2, center))  # type 2 is Thin
+            elseif t1.type == 2 && t2.type == 2
+                # Fat rhombus
+                v = [t1.a, t1.b, t2.a, t1.c]
+                center = sum(v) / 4.0
+                push!(new_tiles, Tile{2, Float64}(v, 1, center))  # type 1 is Fat
+            end
+        end
+    end
+    
     return new_tiles
 end
 
-function inflate_fat_rhombus(tile::Tile{2,Float64})
-    # TODO: proper inflation (1 fat → 1 fat + 2 thin).
-    v = tile.vertices
-    return [Tile{2,Float64}([ϕ * vertex for vertex in v], 1, ϕ * tile.center)]
+inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DefaultSubstitution) = inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
+
+# Placeholder for direct tile inflation
+function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DirectTileInflation)
+    # Fallback to Robinson for now
+    return inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
 end
 
-function inflate_thin_rhombus(tile::Tile{2,Float64})
-    # TODO: proper inflation (1 thin → 1 fat).
-    v = tile.vertices
-    return [Tile{2,Float64}([ϕ * vertex for vertex in v], 2, ϕ * tile.center)]
+export vertex_angles, vertex_configuration
+
+"""
+    vertex_angles(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int) → Vector{Int}
+
+Compute the internal angles of the tiles surrounding the vertex `v_idx` in degrees.
+Returns a sorted vector of integers representing the angles (e.g., `[72, 72, 72, 72, 72]`).
+"""
+function vertex_angles(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int)
+    v_pos = data.positions[v_idx]
+    
+    # We find all tiles that contain v_pos
+    _ensure_plaquettes!(data)
+    plaqs = data.parameters[:plaquettes]
+    
+    angles = Int[]
+    for p in plaqs
+        if v_idx in p.vertices
+            # Find its position in the cycle
+            idx_in_p = findfirst(==(v_idx), p.vertices)
+            N = length(p.vertices)
+            prev_idx = p.vertices[mod1(idx_in_p - 1, N)]
+            next_idx = p.vertices[mod1(idx_in_p + 1, N)]
+            
+            p_prev = data.positions[prev_idx]
+            p_next = data.positions[next_idx]
+            
+            # Vectors from v_pos
+            vec1 = p_prev - v_pos
+            vec2 = p_next - v_pos
+            
+            # Compute angle
+            cos_theta = dot(vec1, vec2) / (norm(vec1) * norm(vec2))
+            cos_theta = clamp(cos_theta, -1.0, 1.0)
+            angle_deg = round(Int, acos(cos_theta) * 180 / π)
+            push!(angles, angle_deg)
+        end
+    end
+    return sort(angles)
 end
+
+"""
+    vertex_configuration(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int) → Symbol
+
+Identify the vertex configuration around `v_idx` using the 8 standard P3 vertex types.
+Standard combinations (sorted degrees summing to 360):
+Returns the signature or standard name if known.
+"""
+function vertex_configuration(data::QuasicrystalData{2, Float64, PenroseP3}, v_idx::Int)
+    angles = vertex_angles(data, v_idx)
+    
+    # The sum of angles must be 360 for interior vertices.
+    if sum(angles) != 360
+        return :Boundary  # Not fully surrounded
+    end
+    
+    # Map from sorted angle lists to Conway/De Bruijn P3 identifiers
+    if angles == [72, 72, 72, 72, 72]
+        return :Sun
+    elseif angles == [72, 144, 144]
+        return :Star
+    elseif angles == [36, 108, 108, 108]
+        return :King
+    elseif angles == [72, 72, 108, 108]
+        return :Queen
+    elseif angles == [36, 72, 108, 144]
+        return :Jack
+    elseif angles == [36, 36, 144, 144]
+        return :Deuce
+    elseif angles == [36, 36, 72, 108, 108]
+        return :Ace
+    else
+        return Symbol("V_", join(angles, "_"))
+    end
+end
+
+
