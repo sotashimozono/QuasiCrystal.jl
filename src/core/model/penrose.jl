@@ -143,7 +143,7 @@ function generate_penrose_substitution(
     end
     
     # Convert to Tiles and deduplicate
-    tile_dict = Dict{Tuple{Int, Int, Int, Int}, Tile{2, Float64}}()
+    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
     star_vectors = star
     for (i, j, w) in current_rhombi
         v1 = w

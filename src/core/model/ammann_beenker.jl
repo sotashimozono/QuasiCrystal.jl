@@ -125,7 +125,7 @@ function generate_ammann_beenker_substitution(
     end
     
     # Convert to Tiles and deduplicate
-    tile_dict = Dict{Tuple{Int, Int, Int, Int}, Tile{2, Float64}}()
+    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
     for (i, j, w) in current_rhombi
         v1, v2, v3, v4 = w, w + star[i+1], w + star[i+1] + star[j+1], w + star[j+1]
         c = (v1 + v3) / 2
