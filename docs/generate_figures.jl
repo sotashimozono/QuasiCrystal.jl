@@ -85,6 +85,13 @@ savepng(
     "penrose_diffraction.png",
 )
 
+@info "Penrose P3 Substitution"
+qc_pen_subst = generate_penrose_substitution(4)
+savepng(
+    plot_lattice(qc_pen_subst; title="Penrose P3 Substitution (gen=4)"),
+    "penrose_substitution.png",
+)
+
 @info "All figures regenerated." sites_fib = num_sites(qc_fib) sites_ab = num_sites(qc_ab) sites_pen = num_sites(
     qc_pen
 ) peaks_fib = num_k_points(fib_peaks) peaks_ab = num_k_points(ab_peaks) peaks_pen = num_k_points(

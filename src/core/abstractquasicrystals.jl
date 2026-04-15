@@ -36,8 +36,28 @@ abstract type AbstractGenerationMethod end
 """Cut-and-project generation tag."""
 struct ProjectionMethod <: AbstractGenerationMethod end
 
+"""
+    AbstractSubstitutionAlgorithm
+
+Dispatch trait to select the specific deflation/inflation algorithm
+during substitution generation.
+"""
+abstract type AbstractSubstitutionAlgorithm end
+
+"""Fallback to the fastest / standard algorithm available."""
+struct DefaultSubstitution <: AbstractSubstitutionAlgorithm end
+
+"""Subdivide by passing through Robinson triangles (Half-kite / Half-dart)."""
+struct RobinsonTriangleInflation <: AbstractSubstitutionAlgorithm end
+
+"""Subdivide tiles directly based on vertex/edge matching."""
+struct DirectTileInflation <: AbstractSubstitutionAlgorithm end
+
 """Substitution / inflation generation tag."""
-struct SubstitutionMethod <: AbstractGenerationMethod end
+struct SubstitutionMethod{A<:AbstractSubstitutionAlgorithm} <: AbstractGenerationMethod
+    algorithm::A
+end
+SubstitutionMethod() = SubstitutionMethod(DefaultSubstitution())
 
 """
     Tile{D, T}
@@ -126,8 +146,6 @@ end
 LatticeCore.num_sites(data::QuasicrystalData) = length(data.positions)
 
 LatticeCore.position(data::QuasicrystalData, i::Int) = data.positions[i]
-
-LatticeCore.neighbors(data::QuasicrystalData, i::Int) = data.nearest_neighbors[i]
 
 function LatticeCore.boundary(::QuasicrystalData{D}) where {D}
     LatticeBoundary(ntuple(_ -> OpenAxis(), D), NoModifier())

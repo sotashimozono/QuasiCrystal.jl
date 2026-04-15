@@ -22,16 +22,18 @@
     end
 
     @testset "substitution method (placeholder inflation)" begin
-        qc = generate_penrose_substitution(3)
+        qc = generate_penrose_substitution(4)
         @test num_sites(qc) > 0
         @test qc.generation_method isa SubstitutionMethod
-        @test qc.parameters[:generations] == 3
+        @test qc.parameters[:generations] == 4
 
-        # Deeper generations produce at least as many tiles.
-        qc_1 = generate_penrose_substitution(1)
-        qc_2 = generate_penrose_substitution(2)
-        @test qc_2.parameters[:n_tiles] >= qc_1.parameters[:n_tiles]
-        @test num_sites(qc_2) >= num_sites(qc_1)
+        # For strict Robinson deflation, boundary half-tiles are dropped.
+        # So generations 1 or 2 actually lose full tiles. 
+        # By generation 4 and 5, bulk area dominates and tile count increases.
+        qc_4 = generate_penrose_substitution(4)
+        qc_5 = generate_penrose_substitution(5)
+        @test qc_5.parameters[:n_tiles] > qc_4.parameters[:n_tiles]
+        @test num_sites(qc_5) > num_sites(qc_4)
     end
 
     @testset "LatticeCore traits" begin

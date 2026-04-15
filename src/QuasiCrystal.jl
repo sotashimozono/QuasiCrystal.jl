@@ -108,12 +108,23 @@ import LatticeCore:
     PlaquetteCenter,
     CellCenter,
     AbstractBoundaryCondition,
-    AbstractBoundaryModifier
+    AbstractBoundaryModifier,
+    Plaquette,
+    plaquettes,
+    neighbor_plaquettes,
+    plaquette_center,
+    num_elements,
+    elements,
+    element_position,
+    element_positions,
+    element_neighbors,
+    incident
 
 # ---- QuasiCrystal source files ---------------------------------------
 
 include("core/abstractquasicrystals.jl")
 include("core/interface.jl")
+include("core/element_api.jl")
 include("core/model/fibonacci.jl")
 include("core/model/penrose.jl")
 include("core/model/ammann_beenker.jl")
@@ -126,7 +137,10 @@ include("utils/visualization.jl")
 # QuasiCrystal-local types
 export AbstractQuasicrystal, AbstractGenerationMethod
 export ProjectionMethod, SubstitutionMethod
+export AbstractSubstitutionAlgorithm,
+    DefaultSubstitution, RobinsonTriangleInflation, DirectTileInflation
 export QuasicrystalData, Tile
+export vertex_angles, vertex_configuration
 export GOLDEN_RATIO, ϕ
 export FibonacciLattice, PenroseP3, AmmannBeenker
 export generate_fibonacci_projection, generate_fibonacci_substitution
@@ -135,6 +149,7 @@ export generate_ammann_beenker_projection, generate_ammann_beenker_substitution
 export fibonacci_sequence_length
 export build_quasicrystal
 export get_positions, get_bonds, get_nearest_neighbors, num_bonds
+export num_plaquettes, bond_type
 export build_nearest_neighbor_bonds!
 export visualize_quasicrystal_positions
 # Fourier analysis
@@ -152,6 +167,9 @@ export AbstractSiteLayout, UniformLayout, SublatticeLayout, ExplicitLayout
 export AbstractSiteType, IsingSite, PottsSite, XYSite, HeisenbergSite, EmptySite
 export AbstractCoordinate, RealSpace, LatticeCoord, HigherDimCoord
 export AbstractLatticeElement, VertexCenter, BondCenter, PlaquetteCenter, CellCenter
+export Plaquette, plaquettes, neighbor_plaquettes, plaquette_center
+export num_elements, elements, element_position, element_positions
+export element_neighbors, incident
 export num_sites, position, positions, neighbors, boundary, bonds, neighbor_bonds
 export site_layout, site_type, sublattice, num_sublattices
 export site_index, lattice_coord
