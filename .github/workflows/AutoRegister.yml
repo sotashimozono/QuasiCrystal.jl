@@ -63,8 +63,12 @@ jobs:
           # already carries its own header the nesting is cosmetic only.
           WRAPPED=$(printf '## Changelog\n\n%s\n\nSee the full changelog at <https://github.com/%s/releases/tag/v%s>.' \
             "$DRAFT_BODY" "${{ github.repository }}" "$CURR")
-
-          printf 'content<<RELEASE_NOTES_EOF\n%s\nRELEASE_NOTES_EOF\n' "$WRAPPED" >> "$GITHUB_OUTPUT"
+          delim="RELEASE_NOTES_$(openssl rand -hex 16)"
+          {
+            echo "content<<$delim"
+            printf '%s\n' "$WRAPPED"
+            echo "$delim"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Post @JuliaRegistrator comment on commit
         if: steps.version_check.outputs.changed == 'true'

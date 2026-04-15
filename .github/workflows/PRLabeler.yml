@@ -49,4 +49,6 @@ jobs:
 
           if echo "$PR_BODY" | grep -qi "\- \[x\].*Breaking"; then
             gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "breaking"
+          else
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "breaking" 2>/dev/null || true
           fi
