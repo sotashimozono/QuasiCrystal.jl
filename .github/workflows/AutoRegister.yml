@@ -53,10 +53,18 @@ jobs:
             xargs -I{} gh release view {} --json body --jq '.body' 2>/dev/null || echo "")
 
           if [ -z "$DRAFT_BODY" ] || [ "$DRAFT_BODY" = "null" ]; then
-            DRAFT_BODY=$(printf '## Changelog\n\n- See commit history for details in v%s.\n\n## Breaking changes\n\n- No explicit breaking changes were detected in automation.' "$CURR")
+            DRAFT_BODY="- See commit history for details in v${CURR}."
           fi
 
-          printf 'content<<RELEASE_NOTES_EOF\n%s\nRELEASE_NOTES_EOF\n' "$DRAFT_BODY" >> "$GITHUB_OUTPUT"
+          # Always wrap the body with a '## Changelog' header so the
+          # registered comment contains the literal 'changelog' keyword
+          # that Registrator's guideline checks for (required on any
+          # breaking release, harmless otherwise). If the upstream draft
+          # already carries its own header the nesting is cosmetic only.
+          WRAPPED=$(printf '## Changelog\n\n%s\n\nSee the full changelog at <https://github.com/%s/releases/tag/v%s>.' \
+            "$DRAFT_BODY" "${{ github.repository }}" "$CURR")
+
+          printf 'content<<RELEASE_NOTES_EOF\n%s\nRELEASE_NOTES_EOF\n' "$WRAPPED" >> "$GITHUB_OUTPUT"
 
       - name: Post @JuliaRegistrator comment on commit
         if: steps.version_check.outputs.changed == 'true'
