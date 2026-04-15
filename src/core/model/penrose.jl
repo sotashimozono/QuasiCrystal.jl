@@ -94,35 +94,86 @@ enumeration work.
 function generate_penrose_substitution(
     generations::Int; method::SubstitutionMethod=SubstitutionMethod()
 )
-    angle_fat = deg2rad(72)
-
-    initial_tris = RobTri[]
+    # Start with a "Sun" of 5 fat rhombi
+    # Each fat rhombus is spanned by (e_i, e_{i+1})
+    star = [SVector(cos(i * 2π / 5), sin(i * 2π / 5)) for i in 0:4]
+    
+    current_rhombi = []
     for i in 0:4
-        angle = i * 2π / 5
-        v1 = SVector(0.0, 0.0)
-        v2 = SVector(cos(angle), sin(angle))
-        v3 = v2 + SVector(cos(angle + angle_fat), sin(angle + angle_fat))
-        v4 = SVector(cos(angle + angle_fat), sin(angle + angle_fat))
-        
-        # A Fat rhombus (72, 108) consists of two Obtuse (type 2) triangles
-        # sharing their long edge (v1-v3 in our setup).
-        push!(initial_tris, RobTri(2, 1, v2, v3, v1))
-        push!(initial_tris, RobTri(2, -1, v4, v1, v3))
+        # (index1, index2, offset)
+        push!(current_rhombi, (i, mod(i+1, 5), SVector(0.0, 0.0)))
     end
 
-    triangles = initial_tris
     for _ in 1:generations
-        triangles = _inflate_rob_tris(triangles)
+        new_rhombi = []
+        for (i, j, w) in current_rhombi
+            # Grid substitution: e_i -> e_{i-1} + e_i + e_{i+1}
+            # The tile (e_i, e_j) is replaced by 9 tiles (e_a, e_b)
+            # a in {i-1, i, i+1}, b in {j-1, j, j+1}
+            
+            # Sub-vectors for i
+            U = [star[mod(i-1, 5) + 1], star[i+1], star[mod(i+1, 5) + 1]]
+            # Sub-vectors for j
+            V = [star[mod(j-1, 5) + 1], star[j+1], star[mod(j+1, 5) + 1]]
+            
+            # Scale old offset
+            w_scaled = w * ϕ
+            
+            for (ai, u) in enumerate(U), (bi, v) in enumerate(V)
+                # Position of sub-tile (ai, bi)
+                # offset is sum of previous vectors in the expansion
+                pos = w_scaled
+                for ak in 1:(ai-1)
+                    pos += U[ak]
+                end
+                for bk in 1:(bi-1)
+                    pos += V[bk]
+                end
+                
+                # New indices
+                idx_a = mod(i + (ai-2), 5)
+                idx_b = mod(j + (bi-2), 5)
+                
+                if idx_a != idx_b
+                    push!(new_rhombi, (idx_a, idx_b, pos))
+                end
+            end
+        end
+        current_rhombi = new_rhombi
     end
     
-    # Pair triangles into rhombi at the very end to avoid erosion
-    tiles = _pair_rob_tris(triangles)
+    # Convert to Tiles and deduplicate
+    tile_dict = Dict{Tuple{Int, Int, Int, Int}, Tile{2, Float64}}()
+    star_vectors = star
+    for (i, j, w) in current_rhombi
+        v1 = w
+        v2 = w + star_vectors[i+1]
+        v3 = w + star_vectors[i+1] + star_vectors[j+1]
+        v4 = w + star_vectors[j+1]
+        
+        # Canonical key for deduplication: sorted vertices
+        # Or just use the center since it's a rhombus tiling
+        center = (v1 + v3) / 2
+        key = (round(Int, center[1]*1e5), round(Int, center[2]*1e5))
+        
+        # Determine type: Fat if |i-j| == 1 or 4, Thin if |i-j| == 2 or 3
+        diff = mod(abs(i - j), 5)
+        type = (diff == 1 || diff == 4) ? 1 : 2
+        
+        if !haskey(tile_dict, key)
+            tile_dict[key] = Tile{2, Float64}([v1, v2, v3, v4], type, center)
+        end
+    end
+    
+    tiles = collect(values(tile_dict))
 
-    # Collect unique vertices from every tile.
+    # Collect unique vertices
     position_set = Set{SVector{2,Float64}}()
     for tile in tiles
         for v in tile.vertices
-            push!(position_set, v)
+            # Round for set stable
+            rv = SVector(round(v[1], digits=8), round(v[2], digits=8))
+            push!(position_set, rv)
         end
     end
     positions = collect(position_set)
@@ -149,119 +200,71 @@ struct RobTri
 end
 
 function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation)
-    # Decompose into Robinson Triangles
-    triangles = RobTri[]
+    # For now, we reuse the robust logic by identifying star indices from tiles
+    star = [SVector(cos(i * 2π / 5), sin(i * 2π / 5)) for i in 0:4]
+    
+    current_rhombi = []
     for tile in tiles
         v = tile.vertices
-        if tile.type == 1 # Fat rhombus (108, 72)
-            # Find the acute angles (72). They are at opposite vertices.
-            # Long diagonal connects the 72-degree vertices.
-            diagonal_sq1 = sum(abs2, v[1] - v[3])
-            diagonal_sq2 = sum(abs2, v[2] - v[4])
-            if diagonal_sq1 > diagonal_sq2
-                push!(triangles, RobTri(2, 1, v[2], v[3], v[1]))
-                push!(triangles, RobTri(2, -1, v[4], v[1], v[3]))
-            else
-                push!(triangles, RobTri(2, 1, v[1], v[2], v[4]))
-                push!(triangles, RobTri(2, -1, v[3], v[4], v[2]))
+        # Identify spanning vectors from origin (v1)
+        v1 = v[1]
+        e1 = v[2] - v1
+        e2 = v[4] - v1
+        
+        # Find closest star indices
+        i = -1
+        j = -1
+        for k in 0:4
+            if norm(e1 - star[k+1]) < 1e-4
+                i = k
+            elseif norm(e1 + star[k+1]) < 1e-4
+                # Handle mirrored/inverted tiles if necessary
+                # In P3 they are usually aligned to star
             end
-        else # Thin rhombus (144, 36)
-            diagonal_sq1 = sum(abs2, v[1] - v[3])
-            diagonal_sq2 = sum(abs2, v[2] - v[4])
-            if diagonal_sq1 < diagonal_sq2
-                push!(triangles, RobTri(1, 1, v[2], v[3], v[1]))
-                push!(triangles, RobTri(1, -1, v[4], v[1], v[3]))
-            else
-                push!(triangles, RobTri(1, 1, v[1], v[2], v[4]))
-                push!(triangles, RobTri(1, -1, v[3], v[4], v[2]))
+            if norm(e2 - star[k+1]) < 1e-4
+                j = k
+            end
+        end
+        
+        if i != -1 && j != -1
+            push!(current_rhombi, (i, j, v1))
+        end
+    end
+    
+    # Apply one generation of vector inflation
+    new_rhombi = []
+    for (i, j, w) in current_rhombi
+        U = [star[mod(i-1, 5) + 1], star[i+1], star[mod(i+1, 5) + 1]]
+        V = [star[mod(j-1, 5) + 1], star[j+1], star[mod(j+1, 5) + 1]]
+        w_scaled = w * ϕ
+        for (ai, u) in enumerate(U), (bi, v) in enumerate(V)
+            pos = w_scaled
+            for ak in 1:(ai-1) pos += U[ak] end
+            for bk in 1:(bi-1) pos += V[bk] end
+            idx_a = mod(i + (ai-2), 5)
+            idx_b = mod(j + (bi-2), 5)
+            if idx_a != idx_b
+                push!(new_rhombi, (idx_a, idx_b, pos))
             end
         end
     end
     
-    inflated = _inflate_rob_tris(triangles)
-    return _pair_rob_tris(inflated)
+    # Deduplicate and return Tiles
+    tile_dict = Dict{Tuple{Int, Int}, Tile{2, Float64}}()
+    for (i, j, w) in new_rhombi
+        v1, v2, v3, v4 = w, w + star[i+1], w + star[i+1] + star[j+1], w + star[j+1]
+        c = (v1 + v3) / 2
+        key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
+        diff = mod(abs(i - j), 5)
+        type = (diff == 1 || diff == 4) ? 1 : 2
+        if !haskey(tile_dict, key)
+            tile_dict[key] = Tile{2, Float64}([v1, v2, v3, v4], type, c)
+        end
+    end
+    return collect(values(tile_dict))
 end
 
-"""
-    _inflate_rob_tris(triangles::Vector{RobTri}) → Vector{RobTri}
-
-Internal helper to deflate one set of Robinson triangles and scale up by ϕ.
-Preserves all fragments (erosion-free).
-"""
-function _inflate_rob_tris(triangles::Vector{RobTri})
-    new_tris = RobTri[]
-    for t in triangles
-        a, b, c = t.a, t.b, t.c
-        if t.type == 1 # Acute
-            if t.parity == 1
-                p = a + (b - a) / ϕ
-                push!(new_tris, RobTri(1, -1, c, p, b))
-                push!(new_tris, RobTri(2, 1, p, c, a))
-            else
-                p = a + (c - a) / ϕ
-                push!(new_tris, RobTri(1, 1, b, p, c))
-                push!(new_tris, RobTri(2, -1, p, b, a))
-            end
-        else # Obtuse
-            if t.parity == 1
-                p = b + (c - b) / ϕ
-                push!(new_tris, RobTri(1, 1, b, p, a))
-                push!(new_tris, RobTri(2, -1, p, a, c))
-            else
-                p = c + (b - c) / ϕ
-                push!(new_tris, RobTri(1, -1, c, p, a))
-                push!(new_tris, RobTri(2, 1, p, a, b))
-            end
-        end
-    end
-    
-    # Scale up by phi
-    scaled = RobTri[]
-    for t in new_tris
-        push!(scaled, RobTri(t.type, t.parity, t.a * ϕ, t.b * ϕ, t.c * ϕ))
-    end
-    return scaled
-end
-
-"""
-    _pair_rob_tris(triangles::Vector{RobTri}) → Vector{Tile}
-
-Internal helper to pair compatible Robinson triangles into fat/thin rhombi.
-Triangles without a neighbor on their base (BC) are dropped.
-"""
-function _pair_rob_tris(triangles::Vector{RobTri})
-    new_tiles = Tile{2, Float64}[]
-    edge_dict = Dict{Tuple{Float64, Float64}, Vector{RobTri}}()
-    
-    for t in triangles
-        mid = (t.b + t.c) / 2
-        # Use rounding for stable dictionary keys
-        key = (round(mid[1], digits=5), round(mid[2], digits=5))
-        if !haskey(edge_dict, key)
-            edge_dict[key] = [t]
-        else
-            push!(edge_dict[key], t)
-        end
-    end
-    
-    for (key, list) in edge_dict
-        if length(list) == 2
-            t1, t2 = list[1], list[2]
-            if t1.type == 1 && t2.type == 1
-                # Thin rhombus (two Acute triangles)
-                v = [t1.a, t1.b, t2.a, t1.c]
-                center = sum(v) / 4.0
-                push!(new_tiles, Tile{2, Float64}(v, 2, center))  # type 2 is Thin
-            elseif t1.type == 2 && t2.type == 2
-                # Fat rhombus (two Obtuse triangles)
-                v = [t1.a, t1.b, t2.a, t1.c]
-                center = sum(v) / 4.0
-                push!(new_tiles, Tile{2, Float64}(v, 1, center))  # type 1 is Fat
-            end
-        end
-    end
-    return new_tiles
-end
+# Keep internal helpers for backward compatibility if needed, but they are no longer used by main loop
 
 inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DefaultSubstitution) = inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
 
