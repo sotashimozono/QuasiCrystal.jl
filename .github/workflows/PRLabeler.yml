@@ -25,6 +25,7 @@ jobs:
           gh label create "performance"   --repo "$REPO" --color "e4e669" --force
           gh label create "documentation" --repo "$REPO" --color "0075ca" --force
           gh label create "chore"         --repo "$REPO" --color "e8e8e8" --force
+          gh label create "breaking"      --repo "$REPO" --color "b60205" --force
 
           if echo "$PR_BODY" | grep -qi "\- \[x\].*Feature"; then
             gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "enhancement"
@@ -44,4 +45,8 @@ jobs:
 
           if echo "$PR_BODY" | grep -qi "\- \[x\].*Maintenance"; then
             gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "chore"
+          fi
+
+          if echo "$PR_BODY" | grep -qi "\- \[x\].*Breaking"; then
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "breaking"
           fi

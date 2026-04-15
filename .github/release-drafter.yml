@@ -4,11 +4,16 @@ version-resolver:
   major:
     labels: ['major']
   minor:
-    labels: ['minor']
+    labels:
+      - 'minor'
+      - 'breaking'
   patch:
     labels: ['patch']
   default: patch
 categories:
+  - title: '💥 Breaking changes'
+    labels:
+      - 'breaking'
   - title: '🚀 Features'
     labels:
       - 'enhancement'
@@ -29,4 +34,6 @@ categories:
       - 'refactor'
 
 template: |
+  ## Changelog
+
   $CHANGES
