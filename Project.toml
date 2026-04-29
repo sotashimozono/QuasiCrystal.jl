@@ -1,6 +1,6 @@
 name = "QuasiCrystal"
 uuid = "7178fac9-d2bf-4933-964d-a28131e4f2a4"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["sotashimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
@@ -11,12 +11,12 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-LatticeCore = "0.8.4"
-LinearAlgebra = "1"
+LatticeCore = "0.8"
+LinearAlgebra = "1.10"
 Plots = "1"
-SparseArrays = "1"
+SparseArrays = "1.10"
 StaticArrays = "1"
-julia = "1.11"
+julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
