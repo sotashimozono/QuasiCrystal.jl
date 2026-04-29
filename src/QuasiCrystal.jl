@@ -122,6 +122,7 @@ import LatticeCore:
 
 # ---- QuasiCrystal source files ---------------------------------------
 
+include("core/tile_types.jl")
 include("core/abstractquasicrystals.jl")
 include("core/interface.jl")
 include("core/numerics.jl")
@@ -141,6 +142,7 @@ export ProjectionMethod, SubstitutionMethod
 export AbstractSubstitutionAlgorithm,
     DefaultSubstitution, RobinsonTriangleInflation, DirectTileInflation
 export QuasicrystalData, Tile
+export TileType, FatRhombus, ThinRhombus, Square, RhombusAB, tile_type_symbol
 export vertex_angles, vertex_configuration
 export GOLDEN_RATIO, ϕ
 export FibonacciLattice, PenroseP3, AmmannBeenker

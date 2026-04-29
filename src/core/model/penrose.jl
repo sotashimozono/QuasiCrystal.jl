@@ -158,7 +158,7 @@ function generate_penrose_substitution(
 
         # Determine type: Fat if |i-j| == 1 or 4, Thin if |i-j| == 2 or 3
         diff = mod(abs(i - j), 5)
-        type = (diff == 1 || diff == 4) ? 1 : 2
+        type = (diff == 1 || diff == 4) ? FatRhombus() : ThinRhombus()
 
         if !haskey(tile_dict, key)
             tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, center)
@@ -261,7 +261,7 @@ function inflate_penrose_tiles(
         c = (v1 + v3) / 2
         key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
         diff = mod(abs(i - j), 5)
-        type = (diff == 1 || diff == 4) ? 1 : 2
+        type = (diff == 1 || diff == 4) ? FatRhombus() : ThinRhombus()
         if !haskey(tile_dict, key)
             tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, c)
         end
