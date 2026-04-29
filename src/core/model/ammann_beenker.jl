@@ -67,6 +67,7 @@ function generate_ammann_beenker_projection(
         :radius => radius,
         :n_max => n_max,
         :window_size => window_size,
+        :window_shape => :box_2d,
         :n_vertices => length(positions),
         :symmetry => 8,
     )
@@ -136,7 +137,7 @@ function generate_ammann_beenker_substitution(
     for (i, j, w) in current_rhombi
         v1, v2, v3, v4 = w, w + star[i + 1], w + star[i + 1] + star[j + 1], w + star[j + 1]
         c = (v1 + v3) / 2
-        key = snap_to_grid(c, 1e-5)
+        key = snap_to_grid(c, SNAP_GRID_EPS)
 
         # Determine type: Square if |i-j| == 2 or 6, Rhombus otherwise.
         diff = mod(abs(i - j), 8)
@@ -153,7 +154,7 @@ function generate_ammann_beenker_substitution(
     pos_dict = Dict{NTuple{2,Int},SVector{2,Float64}}()
     for tile in tiles
         for v in tile.vertices
-            k = snap_to_grid(v, 1e-5)
+            k = snap_to_grid(v, SNAP_GRID_EPS)
             get!(pos_dict, k, v)
         end
     end
@@ -164,6 +165,7 @@ function generate_ammann_beenker_substitution(
         :n_tiles => length(tiles),
         :n_vertices => length(positions),
         :symmetry => 8,
+        :window_shape => :none,
     )
     return QuasicrystalData{2,Float64}(AmmannBeenker(), positions, tiles, method, params)
 end
@@ -188,10 +190,10 @@ function inflate_ammann_beenker_tiles(tiles::Vector{Tile{2,Float64}})
         e1, e2 = v[2] - v1, v[4] - v1
         i = j = -1
         for k in 0:7
-            if norm(e1 - star[k + 1]) < 1e-4
+            if norm(e1 - star[k + 1]) < STAR_DIRECTION_TOL
                 i = k
             end
-            if norm(e2 - star[k + 1]) < 1e-4
+            if norm(e2 - star[k + 1]) < STAR_DIRECTION_TOL
                 j = k
             end
         end

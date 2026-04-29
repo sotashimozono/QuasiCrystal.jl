@@ -74,6 +74,7 @@ function generate_penrose_projection(
         :radius => radius,
         :n_max => n_max,
         :window_size => window_size,
+        :window_shape => :box_3d,
         :n_vertices => length(positions),
     )
     return QuasicrystalData{2,Float64}(PenroseP3(), positions, tiles, method, params)
@@ -158,7 +159,7 @@ function generate_penrose_substitution(
         # Canonical key for deduplication: snap centre to a fixed grid
         # (stable hash key under floating-point round-off).
         center = (v1 + v3) / 2
-        key = snap_to_grid(center, 1e-5)
+        key = snap_to_grid(center, SNAP_GRID_EPS)
 
         # Determine type: Fat if |i-j| == 1 or 4, Thin if |i-j| == 2 or 3
         diff = mod(abs(i - j), 5)
@@ -175,7 +176,7 @@ function generate_penrose_substitution(
     pos_dict = Dict{NTuple{2,Int},SVector{2,Float64}}()
     for tile in tiles
         for v in tile.vertices
-            k = snap_to_grid(v, 1e-5)
+            k = snap_to_grid(v, SNAP_GRID_EPS)
             get!(pos_dict, k, v)
         end
     end
@@ -185,6 +186,7 @@ function generate_penrose_substitution(
         :generations => generations,
         :n_tiles => length(tiles),
         :n_vertices => length(positions),
+        :window_shape => :none,
     )
     return QuasicrystalData{2,Float64}(PenroseP3(), positions, tiles, method, params)
 end
@@ -220,13 +222,13 @@ function inflate_penrose_tiles(
         i = -1
         j = -1
         for k in 0:4
-            if norm(e1 - star[k + 1]) < 1e-4
+            if norm(e1 - star[k + 1]) < STAR_DIRECTION_TOL
                 i = k
-            elseif norm(e1 + star[k + 1]) < 1e-4
+            elseif norm(e1 + star[k + 1]) < STAR_DIRECTION_TOL
                 # Handle mirrored/inverted tiles if necessary
                 # In P3 they are usually aligned to star
             end
-            if norm(e2 - star[k + 1]) < 1e-4
+            if norm(e2 - star[k + 1]) < STAR_DIRECTION_TOL
                 j = k
             end
         end

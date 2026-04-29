@@ -94,7 +94,7 @@ function _resolve_tile_vertices(
     out = Int[]
     sizehint!(out, length(tile.vertices))
     for tv in tile.vertices
-        idx = find_position_index(pidx, tv, POSITION_TOLERANCE)
+        idx = find_position_index(pidx, tv, VERTEX_MERGE_TOL)
         idx == 0 && throw(
             ArgumentError(
                 "tile vertex at $(tv) does not match any site position on $(typeof(data).name.name)",

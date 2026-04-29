@@ -124,8 +124,8 @@ import LatticeCore:
 
 include("core/tile_types.jl")
 include("core/abstractquasicrystals.jl")
-include("core/interface.jl")
 include("core/numerics.jl")
+include("core/interface.jl")
 include("core/element_api.jl")
 include("core/model/fibonacci.jl")
 include("core/model/penrose.jl")
@@ -157,6 +157,8 @@ export fibonacci_sequence_length
 export build_quasicrystal
 export get_positions, get_bonds, get_nearest_neighbors, num_bonds
 export num_plaquettes, bond_type
+export window_shape
+export VERTEX_MERGE_TOL, SNAP_GRID_EPS, STAR_DIRECTION_TOL, positions_equal
 export build_nearest_neighbor_bonds!
 export visualize_quasicrystal_positions
 # Fourier analysis
