@@ -217,8 +217,34 @@ end
 
 LatticeCore.bonds(data::QuasicrystalData) = data.bonds
 
+"""
+    positions(data::QuasicrystalData) → Vector{SVector{D, T}}
+
+Return the dense vector of site positions backing `data`. The
+LatticeCore default builds a generator from `position(data, i)`;
+since `QuasicrystalData` already stores all positions densely we
+return the field directly, avoiding the per-call dispatch and
+allocation of the generator wrapper. Callers that mutate the
+returned vector will mutate the lattice in place — same contract as
+`get_positions`.
+"""
+LatticeCore.positions(data::QuasicrystalData) = data.positions
+
 # Quasicrystals are aperiodic by construction: they admit no
 # Bravais reciprocal lattice (they have a dense Fourier module
 # instead, which is handled by `LatticeCore.fourier_module`).
 LatticeCore.periodicity(::QuasicrystalData) = Aperiodic()
 LatticeCore.reciprocal_support(::QuasicrystalData) = HasFourierModule()
+
+"""
+    topology(data::QuasicrystalData) → TopologyTrait{:quasiperiodic}()
+
+QuasiCrystal-side override of the generic LatticeCore topology
+trait. Every `QuasicrystalData`, regardless of which generator
+family produced it (Fibonacci, Penrose, Ammann–Beenker, ...),
+shares the `:quasiperiodic` topology tag — distinct from `:square`,
+`:line`, etc. used by the periodic reference lattices. Family-level
+discrimination remains available through `data.topology` (the
+`AbstractQuasicrystal{D}` marker singleton stored on the data).
+"""
+LatticeCore.topology(::QuasicrystalData) = TopologyTrait{:quasiperiodic}()
