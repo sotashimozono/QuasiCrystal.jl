@@ -26,4 +26,10 @@ const dirs = ["model"]
             end
         end
     end
+
+    @time begin
+        aqua_path = joinpath(@__DIR__, "test_aqua.jl")
+        println("\n  Including $(aqua_path)")
+        include(aqua_path)
+    end
 end
