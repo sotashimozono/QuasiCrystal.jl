@@ -124,6 +124,7 @@ import LatticeCore:
 
 include("core/abstractquasicrystals.jl")
 include("core/interface.jl")
+include("core/numerics.jl")
 include("core/element_api.jl")
 include("core/model/fibonacci.jl")
 include("core/model/penrose.jl")

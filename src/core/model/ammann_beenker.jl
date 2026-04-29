@@ -129,11 +129,11 @@ function generate_ammann_beenker_substitution(
     end
 
     # Convert to Tiles and deduplicate
-    tile_dict = Dict{Tuple{Int,Int},Tile{2,Float64}}()
+    tile_dict = Dict{NTuple{2,Int},Tile{2,Float64}}()
     for (i, j, w) in current_rhombi
         v1, v2, v3, v4 = w, w + star[i + 1], w + star[i + 1] + star[j + 1], w + star[j + 1]
         c = (v1 + v3) / 2
-        key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
+        key = snap_to_grid(c, 1e-5)
 
         # Determine type: Square if |i-j| == 2, Rhombus if |i-j| == 1 or 3
         diff = mod(abs(i - j), 8)
@@ -146,15 +146,15 @@ function generate_ammann_beenker_substitution(
 
     tiles = collect(values(tile_dict))
 
-    # Collect unique vertices
-    position_set = Set{SVector{2,Float64}}()
+    # Collect unique vertices via stable grid snap
+    pos_dict = Dict{NTuple{2,Int},SVector{2,Float64}}()
     for tile in tiles
         for v in tile.vertices
-            rv = SVector(round(v[1]; digits=8), round(v[2]; digits=8))
-            push!(position_set, rv)
+            k = snap_to_grid(v, 1e-5)
+            get!(pos_dict, k, v)
         end
     end
-    positions = collect(position_set)
+    positions = collect(values(pos_dict))
 
     params = Dict{Symbol,Any}(
         :generations => generations,
