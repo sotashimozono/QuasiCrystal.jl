@@ -41,23 +41,26 @@ function generate_ammann_beenker_projection(
     end
 
     window_size = 0.5
-    raw_positions = Vector{Float64}[]
     n_max = ceil(Int, radius * 1.5)
+
+    # Pre-typed SVector buffer (avoids the legacy `Vector{Float64}[]`
+    # round-trip through plain Julia vectors).
+    positions = SVector{2,Float64}[]
+    P = SMatrix{2,4,Float64}(E_par')
+    Q = SMatrix{2,4,Float64}(E_perp')
 
     for n1 in (-n_max):n_max,
         n2 in (-n_max):n_max, n3 in (-n_max):n_max,
         n4 in (-n_max):n_max
 
-        lattice_point = [float(n1), float(n2), float(n3), float(n4)]
-        pos_par = E_par' * lattice_point
+        lp = SVector{4,Float64}(float(n1), float(n2), float(n3), float(n4))
+        pos_par = P * lp
         norm(pos_par) > radius && continue
-        pos_perp = E_perp' * lattice_point
-        if all(abs.(pos_perp) .<= window_size)
-            push!(raw_positions, pos_par)
+        pos_perp = Q * lp
+        if abs(pos_perp[1]) <= window_size && abs(pos_perp[2]) <= window_size
+            push!(positions, pos_par)
         end
     end
-
-    positions = [SVector{2,Float64}(p[1], p[2]) for p in raw_positions]
     tiles = Tile{2,Float64}[]
 
     params = Dict{Symbol,Any}(
@@ -166,9 +169,12 @@ function generate_ammann_beenker_substitution(
 end
 
 """
-    inflate_ammann_beenker_tiles(tiles::Vector{Tile{2, Float64}})
+    inflate_ammann_beenker_tiles(tiles::Vector{Tile{2, Float64}}, alg=DefaultSubstitution())
 
-Inflation rule for AB: λe₁ = e₁₋₁ + e₁ + e₁₊₁ where λ = 1+√2
+Inflation rule for AB: λe₁ = e₁₋₁ + e₁ + e₁₊₁ where λ = 1+√2.
+
+`DefaultSubstitution` and [`AmmannBeenkerInflation`](@ref) are
+fully implemented; other algorithms raise `error("not implemented")`.
 """
 function inflate_ammann_beenker_tiles(tiles::Vector{Tile{2,Float64}})
     # Robust rule for AB: λe₁ = e₁₋₁ + e₁ + e₁₊₁ where λ = 1+√2
@@ -226,4 +232,27 @@ function inflate_ammann_beenker_tiles(tiles::Vector{Tile{2,Float64}})
         end
     end
     return collect(values(tile_dict))
+end
+
+# ---- Algorithm-dispatched inflation entry points --------------------
+
+function inflate_ammann_beenker_tiles(
+    tiles::Vector{Tile{2,Float64}}, ::Union{DefaultSubstitution,AmmannBeenkerInflation}
+)
+    return inflate_ammann_beenker_tiles(tiles)
+end
+
+function inflate_ammann_beenker_tiles(
+    ::Vector{Tile{2,Float64}}, alg::AbstractSubstitutionAlgorithm
+)
+    error(
+        "$(typeof(alg)) is not yet implemented for AmmannBeenker. " *
+        "Use DefaultSubstitution() or AmmannBeenkerInflation() instead.",
+    )
+end
+
+# Single-dispatch on the algorithm: `AmmannBeenkerInflation` is
+# AB-specific so this overload is unambiguous.
+function inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::AmmannBeenkerInflation)
+    inflate_ammann_beenker_tiles(tiles, alg)
 end
