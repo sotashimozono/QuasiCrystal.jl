@@ -135,9 +135,9 @@ function generate_ammann_beenker_substitution(
         c = (v1 + v3) / 2
         key = snap_to_grid(c, 1e-5)
 
-        # Determine type: Square if |i-j| == 2, Rhombus if |i-j| == 1 or 3
+        # Determine type: Square if |i-j| == 2 or 6, Rhombus otherwise.
         diff = mod(abs(i - j), 8)
-        type = (diff == 2 || diff == 6) ? 1 : 2 # type 1 is Square, 2 is Rhombus
+        type = (diff == 2 || diff == 6) ? Square() : RhombusAB()
 
         if !haskey(tile_dict, key)
             tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, c)
@@ -220,7 +220,7 @@ function inflate_ammann_beenker_tiles(tiles::Vector{Tile{2,Float64}})
         c = (v1 + v3) / 2
         key = (round(Int, c[1]*1e5), round(Int, c[2]*1e5))
         diff = mod(abs(i - j), 8)
-        type = (diff == 2 || diff == 6) ? 1 : 2
+        type = (diff == 2 || diff == 6) ? Square() : RhombusAB()
         if !haskey(tile_dict, key)
             tile_dict[key] = Tile{2,Float64}([v1, v2, v3, v4], type, c)
         end

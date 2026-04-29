@@ -63,12 +63,17 @@ SubstitutionMethod() = SubstitutionMethod(DefaultSubstitution())
     Tile{D, T}
 
 A single tile in a quasicrystalline tiling. Carries the vertices of
-the tile, an integer type id (e.g. fat vs thin rhombus), and the
-tile centre.
+the tile, a semantic [`TileType`](@ref) tag (e.g. [`FatRhombus`](@ref)
+vs [`ThinRhombus`](@ref)), and the tile centre.
+
+!!! note "Breaking change (v0.5)"
+    `type::Int` was replaced by `type::TileType`. Migrate `1/2`
+    integer tags to the geometry-specific singletons defined in
+    `src/core/tile_types.jl`.
 """
 struct Tile{D,T}
     vertices::Vector{SVector{D,T}}
-    type::Int
+    type::TileType
     center::SVector{D,T}
 end
 

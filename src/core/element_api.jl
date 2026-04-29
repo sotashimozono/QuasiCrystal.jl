@@ -27,8 +27,9 @@ pipeline, so the search always succeeds.
 
 Return the quasicrystal's plaquette list, derived from `data.tiles`
 on first access and cached in `data.parameters[:plaquettes]`. The
-plaquette type tag is `Symbol("tile_type_\$n")` where `n` is the
-integer `Tile.type` — downstream code that needs a richer tag can
+plaquette type tag is the semantic [`tile_type_symbol`](@ref) of the
+tile's [`TileType`](@ref) — e.g. `:fat_rhombus`, `:thin_rhombus`,
+`:square`, `:rhombus`. Downstream code that needs a richer tag can
 override the conversion after construction.
 """
 function LatticeCore.plaquettes(data::QuasicrystalData{D,T}) where {D,T}
@@ -57,7 +58,7 @@ function _materialise_plaquettes(data::QuasicrystalData{D,T}) where {D,T}
     pidx = _ensure_position_index!(data)
     for tile in data.tiles
         vertex_ids = _resolve_tile_vertices(data, tile, pidx)
-        push!(out, Plaquette{D,T}(vertex_ids, tile.center, Symbol("tile_type_", tile.type)))
+        push!(out, Plaquette{D,T}(vertex_ids, tile.center, tile_type_symbol(tile.type)))
     end
     return out
 end
