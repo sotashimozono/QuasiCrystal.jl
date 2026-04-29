@@ -6,5 +6,4 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 QuasiCrystal = "7178fac9-d2bf-4933-964d-a28131e4f2a4"
 
 [sources]
-LatticeCore = {url = "https://github.com/sotashimozono/LatticeCore.jl.git", rev = "v0.8.1"}
 QuasiCrystal = {path = ".."}
