@@ -199,9 +199,7 @@ plaquette `i` (the dual graph). Specialises the generic LatticeCore
 implementation by indexing plaquettes by their integer vertex sets
 once instead of re-collecting on every comparison.
 """
-function LatticeCore.element_neighbors(
-    data::QuasicrystalData, ::PlaquetteCenter, i::Int
-)
+function LatticeCore.element_neighbors(data::QuasicrystalData, ::PlaquetteCenter, i::Int)
     ps = plaquettes(data)
     1 ≤ i ≤ length(ps) || throw(BoundsError(ps, i))
     p = ps[i]
@@ -243,16 +241,12 @@ end
 # specialisations below skip the redundant collect.
 
 # Vertex → Bond: bonds touching site i. Walks data.bonds once.
-function LatticeCore.incident(
-    data::QuasicrystalData, ::VertexCenter, ::BondCenter, i::Int
-)
+function LatticeCore.incident(data::QuasicrystalData, ::VertexCenter, ::BondCenter, i::Int)
     return [k for (k, b) in enumerate(data.bonds) if b.i == i || b.j == i]
 end
 
 # Bond → Vertex: endpoints of bond i.
-function LatticeCore.incident(
-    data::QuasicrystalData, ::BondCenter, ::VertexCenter, i::Int
-)
+function LatticeCore.incident(data::QuasicrystalData, ::BondCenter, ::VertexCenter, i::Int)
     b = data.bonds[i]
     return [b.i, b.j]
 end

@@ -66,7 +66,10 @@ using StaticArrays
         # Find a plaquette index that actually has a neighbour
         # (Penrose tilings always have some plaquette with a shared
         # edge, so this should succeed on a non-degenerate patch).
-        ks = [k for k in 1:length(ps) if !isempty(element_neighbors(pen, PlaquetteCenter(), k))]
+        ks = [
+            k for
+            k in 1:length(ps) if !isempty(element_neighbors(pen, PlaquetteCenter(), k))
+        ]
         @test !isempty(ks)
         k = first(ks)
         nbrs = element_neighbors(pen, PlaquetteCenter(), k)
@@ -75,9 +78,12 @@ using StaticArrays
         function _edges(p)
             vs = p.vertices
             n = length(vs)
-            return Set(Tuple{Int,Int}[
-                (min(vs[i], vs[mod1(i + 1, n)]), max(vs[i], vs[mod1(i + 1, n)])) for i in 1:n
-            ])
+            return Set(
+                Tuple{Int,Int}[
+                    (min(vs[i], vs[mod1(i + 1, n)]), max(vs[i], vs[mod1(i + 1, n)])) for
+                    i in 1:n
+                ],
+            )
         end
         e_k = _edges(ps[k])
         for j in nbrs
@@ -116,7 +122,9 @@ using StaticArrays
         end
 
         # Vertex ↔ Plaquette round-trip: pick a vertex that lies on a tile.
-        v_with_p = findfirst(i -> any(p -> i in p.vertices, plaquettes(pen)), 1:num_sites(pen))
+        v_with_p = findfirst(
+            i -> any(p -> i in p.vertices, plaquettes(pen)), 1:num_sites(pen)
+        )
         @test v_with_p !== nothing
         v_plaqs = incident(pen, VertexCenter(), PlaquetteCenter(), v_with_p)
         @test !isempty(v_plaqs)
