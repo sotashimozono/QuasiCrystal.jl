@@ -65,6 +65,13 @@ savepng(
     "ammann_beenker_diffraction.png",
 )
 
+@info "Ammann–Beenker Substitution"
+qc_ab_subst = generate_ammann_beenker_substitution(2)
+savepng(
+    plot_lattice(qc_ab_subst; title="Ammann–Beenker Substitution (gen=2)"),
+    "ammann_beenker_substitution.png",
+)
+
 # ---- 3. Penrose P3 -------------------------------------------------
 
 @info "Penrose P3"
