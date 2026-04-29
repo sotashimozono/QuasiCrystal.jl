@@ -57,9 +57,7 @@ function generate_penrose_projection(
         n2 in (-n_max):n_max, n3 in (-n_max):n_max, n4 in (-n_max):n_max,
         n5 in (-n_max):n_max
 
-        lp = SVector{5,Float64}(
-            float(n1), float(n2), float(n3), float(n4), float(n5)
-        )
+        lp = SVector{5,Float64}(float(n1), float(n2), float(n3), float(n4), float(n5))
         pos_par = P * lp
         norm(pos_par) > radius && continue
 
@@ -297,8 +295,9 @@ end
 
 # Single-dispatch on the algorithm: `RobinsonTriangleInflation` is
 # Penrose-specific, so this overload is unambiguous.
-inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation) =
+function inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation)
     inflate_penrose_tiles(tiles, alg)
+end
 
 export vertex_angles, vertex_configuration
 

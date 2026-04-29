@@ -253,5 +253,6 @@ end
 
 # Single-dispatch on the algorithm: `AmmannBeenkerInflation` is
 # AB-specific so this overload is unambiguous.
-inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::AmmannBeenkerInflation) =
+function inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::AmmannBeenkerInflation)
     inflate_ammann_beenker_tiles(tiles, alg)
+end
