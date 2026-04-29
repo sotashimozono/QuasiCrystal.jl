@@ -13,6 +13,10 @@ In this module, QuasiCrystals structures are available including,
 - Penrose Tile
 - Amman Beenker Lattice
 
+Package quality is checked on CI via [Aqua.jl](https://github.com/JuliaTesting/Aqua.jl)
+(`Aqua.test_all`), covering ambiguities, unbound type parameters, undefined
+exports, stale dependencies, and Method-of-piracy.
+
 ## Features
 
 ### Unified AbstractLattice Interface
