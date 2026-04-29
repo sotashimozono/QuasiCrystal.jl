@@ -54,25 +54,46 @@ end
 function _materialise_plaquettes(data::QuasicrystalData{D,T}) where {D,T}
     out = Plaquette{D,T}[]
     isempty(data.tiles) && return out
+    pidx = _ensure_position_index!(data)
     for tile in data.tiles
-        vertex_ids = _resolve_tile_vertices(data, tile)
+        vertex_ids = _resolve_tile_vertices(data, tile, pidx)
         push!(out, Plaquette{D,T}(vertex_ids, tile.center, Symbol("tile_type_", tile.type)))
     end
     return out
 end
 
 """
-    _resolve_tile_vertices(data, tile) → Vector{Int}
+    _ensure_position_index!(data) → PositionIndex
+
+Lazily build and cache a KDTree over `data.positions` in
+`data.parameters[:position_index]`. The cache is keyed on the
+positions vector identity so it survives multiple plaquette / lookup
+calls without rebuilding.
+"""
+function _ensure_position_index!(data::QuasicrystalData{D,T}) where {D,T}
+    cached = get(data.parameters, :position_index, nothing)
+    if cached !== nothing
+        return cached::PositionIndex
+    end
+    pidx = build_position_index(data.positions)
+    data.parameters[:position_index] = pidx
+    return pidx
+end
+
+"""
+    _resolve_tile_vertices(data, tile, pidx) → Vector{Int}
 
 Map each of `tile.vertices` (a position in real space) back to its
-integer index in `data.positions` via a tolerant search. Throws if
-the tile vertex doesn't match any lattice site.
+integer index in `data.positions` via a tolerant KDTree query.
+Throws if the tile vertex doesn't match any lattice site.
 """
-function _resolve_tile_vertices(data::QuasicrystalData{D,T}, tile::Tile{D,T}) where {D,T}
+function _resolve_tile_vertices(
+    data::QuasicrystalData{D,T}, tile::Tile{D,T}, pidx::PositionIndex
+) where {D,T}
     out = Int[]
     sizehint!(out, length(tile.vertices))
     for tv in tile.vertices
-        idx = _find_position_index(data.positions, tv)
+        idx = find_position_index(pidx, tv, POSITION_TOLERANCE)
         idx == 0 && throw(
             ArgumentError(
                 "tile vertex at $(tv) does not match any site position on $(typeof(data).name.name)",
@@ -81,17 +102,6 @@ function _resolve_tile_vertices(data::QuasicrystalData{D,T}, tile::Tile{D,T}) wh
         push!(out, idx)
     end
     return out
-end
-
-function _find_position_index(
-    positions::Vector{SVector{D,T}}, target::SVector{D,T}
-) where {D,T}
-    for (i, p) in enumerate(positions)
-        if norm(p - target) < POSITION_TOLERANCE
-            return i
-        end
-    end
-    return 0
 end
 
 """

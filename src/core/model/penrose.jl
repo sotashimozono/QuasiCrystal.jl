@@ -143,7 +143,7 @@ function generate_penrose_substitution(
     end
 
     # Convert to Tiles and deduplicate
-    tile_dict = Dict{Tuple{Int,Int},Tile{2,Float64}}()
+    tile_dict = Dict{NTuple{2,Int},Tile{2,Float64}}()
     star_vectors = star
     for (i, j, w) in current_rhombi
         v1 = w
@@ -151,10 +151,10 @@ function generate_penrose_substitution(
         v3 = w + star_vectors[i + 1] + star_vectors[j + 1]
         v4 = w + star_vectors[j + 1]
 
-        # Canonical key for deduplication: sorted vertices
-        # Or just use the center since it's a rhombus tiling
+        # Canonical key for deduplication: snap centre to a fixed grid
+        # (stable hash key under floating-point round-off).
         center = (v1 + v3) / 2
-        key = (round(Int, center[1]*1e5), round(Int, center[2]*1e5))
+        key = snap_to_grid(center, 1e-5)
 
         # Determine type: Fat if |i-j| == 1 or 4, Thin if |i-j| == 2 or 3
         diff = mod(abs(i - j), 5)
@@ -167,16 +167,15 @@ function generate_penrose_substitution(
 
     tiles = collect(values(tile_dict))
 
-    # Collect unique vertices
-    position_set = Set{SVector{2,Float64}}()
+    # Collect unique vertices via stable grid snap
+    pos_dict = Dict{NTuple{2,Int},SVector{2,Float64}}()
     for tile in tiles
         for v in tile.vertices
-            # Round for set stable
-            rv = SVector(round(v[1]; digits=8), round(v[2]; digits=8))
-            push!(position_set, rv)
+            k = snap_to_grid(v, 1e-5)
+            get!(pos_dict, k, v)
         end
     end
-    positions = collect(position_set)
+    positions = collect(values(pos_dict))
 
     params = Dict{Symbol,Any}(
         :generations => generations,
