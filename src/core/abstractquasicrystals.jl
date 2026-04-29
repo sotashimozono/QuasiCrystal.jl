@@ -175,6 +175,40 @@ function LatticeCore.boundary(::QuasicrystalData{D}) where {D}
     LatticeBoundary(ntuple(_ -> OpenAxis(), D), NoModifier())
 end
 
+"""
+    window_shape(data::QuasicrystalData) → Symbol
+
+Return the acceptance-window shape used to generate `data`, looked up
+from `data.parameters[:window_shape]`. The shape is a finer-grained
+descriptor than the global `boundary()` trait — the latter currently
+returns `OpenAxis` on every axis for any quasicrystal because
+LatticeCore's `AbstractAxisBC` cannot yet express a non-trivial
+acceptance window in perpendicular space.
+
+The shipped generators populate `:window_shape` as follows:
+
+| Generator                             | `:window_shape` |
+|---------------------------------------|-----------------|
+| `generate_fibonacci_projection`       | `:interval_1d`  |
+| `generate_ammann_beenker_projection`  | `:box_2d`       |
+| `generate_penrose_projection`         | `:box_3d`       |
+| `generate_*_substitution`             | `:none`         |
+
+If the key is absent the function returns `:unknown`. Custom
+generators are encouraged to write their window descriptor under the
+`:window_shape` key so downstream tooling (Fourier diagnostics,
+boundary refinement, ...) can dispatch on it without parsing the
+generation method.
+
+A richer trait-based dispatch (extending
+`LatticeCore.AbstractAxisBC` to carry an explicit window) is tracked
+as a separate follow-up; this accessor is the minimal hook callers
+need today.
+"""
+function window_shape(data::QuasicrystalData)
+    return get(data.parameters, :window_shape, :unknown)::Symbol
+end
+
 LatticeCore.site_layout(data::QuasicrystalData) = data.layout
 
 function LatticeCore.size_trait(data::QuasicrystalData)

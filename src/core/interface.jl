@@ -8,9 +8,6 @@ exported by LatticeCore and work on any `AbstractLattice`. The
 names in this file remain for legacy code that spells them out.
 """
 
-"""Position tolerance for duplicate-detection in `build_nearest_neighbor_bonds!`."""
-const POSITION_TOLERANCE = 1e-10
-
 """
     get_positions(data::QuasicrystalData) → Vector{SVector{D, T}}
 
@@ -48,7 +45,7 @@ num_bonds(data::QuasicrystalData) = length(data.bonds)
 
 Populate `data.bonds` and `data.nearest_neighbors` with all pairs
 of sites whose Euclidean distance is strictly less than `cutoff`
-and strictly greater than `POSITION_TOLERANCE`. Existing bonds are
+and strictly greater than `VERTEX_MERGE_TOL`. Existing bonds are
 cleared first. Mutates `data.bonds` and the inner vectors of
 `data.nearest_neighbors` in place.
 
@@ -71,7 +68,7 @@ function build_nearest_neighbor_bonds!(
             pos_j = data.positions[j]
             bond_vec = pos_j - pos_i
             dist = norm(bond_vec)
-            if dist < cutoff && dist > POSITION_TOLERANCE
+            if dist < cutoff && dist > VERTEX_MERGE_TOL
                 push!(data.bonds, Bond{D,T}(i, j, bond_vec, :nearest))
                 push!(data.nearest_neighbors[i], j)
                 push!(data.nearest_neighbors[j], i)

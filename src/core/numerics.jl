@@ -19,6 +19,76 @@ Ammann–Beenker) and by the tile→plaquette conversion in
 
 using NearestNeighbors
 
+# ---- Tolerance constants ---------------------------------------------
+#
+# Centralised numerical tolerances for the substitution / projection
+# pipelines. Each call site that previously hardcoded a magic number
+# (`1e-10`, `1e-5`, `1e-4`) now references one of these named
+# constants so the trade-offs are documented in one place and any
+# future tightening / loosening can be done in a single edit.
+
+"""
+    VERTEX_MERGE_TOL
+
+Distance tolerance below which two real-space site / vertex positions
+are considered the same point. Used by the bond builder
+(`build_nearest_neighbor_bonds!`) to skip self-pairs and by the
+tile→plaquette KDTree lookup in `_resolve_tile_vertices`.
+
+Value: `1e-10`. This is several orders of magnitude smaller than the
+minimum inter-site spacing produced by the shipped projection /
+substitution generators (`O(1)` in the natural units of the
+construction), and comfortably larger than the round-off accumulated
+by a few generations of recursion.
+"""
+const VERTEX_MERGE_TOL = 1e-10
+
+"""
+    POSITION_TOLERANCE
+
+Legacy alias for [`VERTEX_MERGE_TOL`](@ref). Retained for
+backwards-compatibility with callers that imported the old name.
+"""
+const POSITION_TOLERANCE = VERTEX_MERGE_TOL
+
+"""
+    SNAP_GRID_EPS
+
+Resolution of the integer-tuple hash key produced by
+[`snap_to_grid`](@ref). Distinct sites produced by the substitution
+pipeline are well separated at this scale; round-off in deep
+recursion is comfortably below it.
+
+Value: `1e-5` — matches the legacy `round(Int, c * 1e5)` resolution.
+"""
+const SNAP_GRID_EPS = 1e-5
+
+"""
+    STAR_DIRECTION_TOL
+
+Tolerance for matching an inflated tile edge to one of the unit
+star vectors `e_k = (cos(2πk/n), sin(2πk/n))` in the substitution
+inflation rules (Penrose, Ammann–Beenker). Looser than
+[`VERTEX_MERGE_TOL`](@ref) because the comparison is between unit
+vectors after a long chain of multiplications by `ϕ`, not between
+sites of the lattice.
+
+Value: `1e-4`.
+"""
+const STAR_DIRECTION_TOL = 1e-4
+
+"""
+    positions_equal(a, b; tol = VERTEX_MERGE_TOL) -> Bool
+
+Tolerant equality test between two real-space positions.
+Returns `true` iff `norm(a - b) < tol`.
+"""
+@inline function positions_equal(
+    a::SVector{D,T}, b::SVector{D,T}; tol::Real=VERTEX_MERGE_TOL
+) where {D,T}
+    return norm(a - b) < tol
+end
+
 # ---- snap_to_grid -----------------------------------------------------
 
 """
@@ -39,7 +109,7 @@ the legacy `round(Int, c*1e5)` resolution).
     return ntuple(i -> round(Int, pos[i] * inv_eps), D)
 end
 
-@inline snap_to_grid(pos::SVector{D,T}) where {D,T} = snap_to_grid(pos, T(1e-5))
+@inline snap_to_grid(pos::SVector{D,T}) where {D,T} = snap_to_grid(pos, T(SNAP_GRID_EPS))
 
 # ---- PositionIndex ---------------------------------------------------
 
