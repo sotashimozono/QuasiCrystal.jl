@@ -45,25 +45,31 @@ function generate_penrose_projection(
     end
 
     window_size = 0.5
-    raw_positions = Vector{Float64}[]
     n_max = ceil(Int, radius * 1.5)
+
+    # Pre-typed SVector buffer: avoids the intermediate `Vector{Float64}[]`
+    # and the second pass that converted each entry to `SVector{2,Float64}`.
+    positions = SVector{2,Float64}[]
+    P = SMatrix{2,5,Float64}(E_par')
+    Q = SMatrix{3,5,Float64}(E_perp')
 
     for n1 in (-n_max):n_max,
         n2 in (-n_max):n_max, n3 in (-n_max):n_max, n4 in (-n_max):n_max,
         n5 in (-n_max):n_max
 
-        lattice_point = [float(n1), float(n2), float(n3), float(n4), float(n5)]
-        pos_par = E_par' * lattice_point
-
+        lp = SVector{5,Float64}(
+            float(n1), float(n2), float(n3), float(n4), float(n5)
+        )
+        pos_par = P * lp
         norm(pos_par) > radius && continue
 
-        pos_perp = E_perp' * lattice_point
-        if all(abs.(pos_perp) .<= window_size)
-            push!(raw_positions, pos_par)
+        pos_perp = Q * lp
+        if abs(pos_perp[1]) <= window_size &&
+            abs(pos_perp[2]) <= window_size &&
+            abs(pos_perp[3]) <= window_size
+            push!(positions, pos_par)
         end
     end
-
-    positions = [SVector{2,Float64}(p[1], p[2]) for p in raw_positions]
     tiles = Tile{2,Float64}[]   # Tile construction is a future task.
 
     params = Dict{Symbol,Any}(
@@ -272,14 +278,27 @@ end
 # Keep internal helpers for backward compatibility if needed, but they are no longer used by main loop
 
 function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DefaultSubstitution)
+    # `DefaultSubstitution` is contractually the fastest fully-working
+    # algorithm for the family — for Penrose that is the Robinson
+    # triangle inflation route.
     inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
 end
 
-# Placeholder for direct tile inflation
-function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, alg::DirectTileInflation)
-    # Fallback to Robinson for now
-    return inflate_penrose_tiles(tiles, RobinsonTriangleInflation())
+# `DirectTileInflation` for Penrose is a placeholder shell — the
+# direct tile-by-tile substitution rules have not been ported yet.
+# Make the unimplemented status explicit instead of silently
+# delegating to a different algorithm.
+function inflate_penrose_tiles(::Vector{Tile{2,Float64}}, ::DirectTileInflation)
+    error(
+        "DirectTileInflation is not yet implemented for PenroseP3. " *
+        "Use DefaultSubstitution() or RobinsonTriangleInflation() instead.",
+    )
 end
+
+# Single-dispatch on the algorithm: `RobinsonTriangleInflation` is
+# Penrose-specific, so this overload is unambiguous.
+inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::RobinsonTriangleInflation) =
+    inflate_penrose_tiles(tiles, alg)
 
 export vertex_angles, vertex_configuration
 

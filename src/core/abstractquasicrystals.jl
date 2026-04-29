@@ -53,11 +53,30 @@ struct RobinsonTriangleInflation <: AbstractSubstitutionAlgorithm end
 """Subdivide tiles directly based on vertex/edge matching."""
 struct DirectTileInflation <: AbstractSubstitutionAlgorithm end
 
+"""Ammann–Beenker-specific inflation rule: `λ·eₖ = eₖ₋₁ + eₖ + eₖ₊₁`, λ = 1+√2."""
+struct AmmannBeenkerInflation <: AbstractSubstitutionAlgorithm end
+
 """Substitution / inflation generation tag."""
 struct SubstitutionMethod{A<:AbstractSubstitutionAlgorithm} <: AbstractGenerationMethod
     algorithm::A
 end
 SubstitutionMethod() = SubstitutionMethod(DefaultSubstitution())
+
+"""
+    inflate_tiles(tiles::Vector{Tile{D, T}}, alg::AbstractSubstitutionAlgorithm)
+        → Vector{Tile{D, T}}
+
+Generic single-dispatch inflation entry point: apply the algorithm
+`alg`'s substitution rule to a list of tiles and return the inflated
+tile list. Family-specific dispatch (Penrose, Ammann–Beenker, ...)
+is provided in the corresponding `model/` files.
+
+`DefaultSubstitution` always selects an algorithm that is fully
+implemented for that family. The other algorithms may raise
+`error("not implemented")` for families where their geometric rules
+have not yet been coded.
+"""
+function inflate_tiles end
 
 """
     Tile{D, T}

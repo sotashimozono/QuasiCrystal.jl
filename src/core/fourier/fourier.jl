@@ -5,10 +5,9 @@ enumerate Bragg peaks up to a cutoff, and hand the result back as a
 `LatticeCore.momentum_lattice`.
 
 This file ships the generic peak-enumeration routine
-(`bragg_peaks`) plus the topology-specific constructor for
-[`FibonacciLattice`](@ref)'s `HyperReciprocalLattice`. Penrose and
-Ammann–Beenker land in follow-up PRs, once their polygonal
-acceptance windows are coded.
+(`bragg_peaks`) plus topology-specific constructors for
+[`FibonacciLattice`](@ref), [`AmmannBeenker`](@ref), and
+[`PenroseP3`](@ref).
 """
 
 # ---- hyper_reciprocal_lattice ---------------------------------------
@@ -297,9 +296,9 @@ QuasiCrystal-side override of the generic
 entry point. Calls [`bragg_peaks`](@ref) with the requested cutoff
 and returns a `BraggPeakSet`.
 
-Currently implemented for `FibonacciLattice` only. Passing a
-Penrose / Ammann–Beenker lattice raises a `MethodError` on
-`hyper_reciprocal_lattice`.
+Implemented for `FibonacciLattice`, `AmmannBeenker`, and
+`PenroseP3`. Topologies without a `hyper_reciprocal_lattice`
+overload raise a `MethodError`.
 """
 function LatticeCore.fourier_module(
     qc::QuasicrystalData; kmax::Real=20.0, intensity_cutoff::Real=0.0

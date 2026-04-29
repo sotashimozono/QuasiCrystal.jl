@@ -140,7 +140,11 @@ include("utils/visualization.jl")
 export AbstractQuasicrystal, AbstractGenerationMethod
 export ProjectionMethod, SubstitutionMethod
 export AbstractSubstitutionAlgorithm,
-    DefaultSubstitution, RobinsonTriangleInflation, DirectTileInflation
+    DefaultSubstitution,
+    RobinsonTriangleInflation,
+    DirectTileInflation,
+    AmmannBeenkerInflation
+export inflate_tiles
 export QuasicrystalData, Tile
 export TileType, FatRhombus, ThinRhombus, Square, RhombusAB, tile_type_symbol
 export vertex_angles, vertex_configuration
