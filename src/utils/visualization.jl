@@ -20,6 +20,7 @@ no methods are defined until the extension activates.
 | [`visualize_quasicrystal_positions`]  | Scatter the site positions (1D / 2D).      |
 | [`plot_acceptance_window`]            | Cut-and-project window + hyper points.     |
 | [`plot_tiles`]                        | Polygon-fill 2D tiles, colour by type.     |
+| [`plot_state`]                        | Colour-mapped per-site state vector.       |
 """
 
 """
@@ -143,3 +144,44 @@ plot_tiles(ab; show_boundary = false)
 - `ArgumentError` for an unknown `palette` symbol.
 """
 function plot_tiles end
+
+"""
+    plot_state(data::QuasicrystalData, state;
+               colormap = :viridis,
+               marker_size::Real = 4,
+               palette = nothing,
+               mode::Symbol = :abs2,
+               title::AbstractString = "QuasiCrystal state",
+               kwargs...) -> Plots.Plot
+
+Visualise a per-site state vector on top of the quasicrystal scatter.
+`state[i]` is mapped onto the marker colour of vertex `i`. Implemented
+in `QuasiCrystalPlotsExt`; requires `using Plots` at the call site.
+
+Three input forms are supported, dispatched on `eltype(state)`:
+
+* Real-valued state -- `state::AbstractVector{<:Real}`. Continuous
+  `colormap` (default `:viridis`).
+* Discrete state -- `state::AbstractVector{<:Union{Bool, Integer}}`.
+  Categorical palette (`:tab10` default; override via `palette`).
+* Complex state -- `state::AbstractVector{<:Complex}`. Projected to
+  a real scalar via `mode in (:abs2, :abs, :real, :imag, :phase)`
+  (default `:abs2`) before colour-mapping.
+
+# Examples
+
+```julia
+using QuasiCrystal, Plots
+
+qc = generate_penrose_substitution(3)
+state = [sin(p[1]) * cos(p[2]) for p in get_positions(qc)]
+plot_state(qc, state; colormap = :plasma, marker_size = 5)
+```
+
+```julia
+fib = generate_fibonacci_substitution(6)
+occ = [iseven(i) for i in 1:num_sites(fib)]
+plot_state(fib, occ; marker_size = 6)
+```
+"""
+function plot_state end
