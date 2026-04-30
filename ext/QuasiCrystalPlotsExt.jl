@@ -532,4 +532,223 @@ function QuasiCrystal.plot_tiles(
     return p
 end
 
+# ====================================================================
+# plot_state -- per-site state colour mapping
+# ====================================================================
+
+@inline _project_complex(z, ::Val{:abs2}) = abs2(z)
+@inline _project_complex(z, ::Val{:abs}) = abs(z)
+@inline _project_complex(z, ::Val{:real}) = real(z)
+@inline _project_complex(z, ::Val{:imag}) = imag(z)
+@inline _project_complex(z, ::Val{:phase}) = angle(z)
+
+function _project_complex(state::AbstractVector{<:Complex}, mode::Symbol)
+    mode in (:abs2, :abs, :real, :imag, :phase) || throw(
+        ArgumentError(
+            "plot_state: unsupported mode=$(mode). " *
+            "Use one of :abs2, :abs, :real, :imag, :phase.",
+        ),
+    )
+    v = Val(mode)
+    return [_project_complex(z, v) for z in state]
+end
+
+function _mode_label(mode::Symbol)
+    if mode === :abs2
+        "|state|^2"
+    elseif mode === :abs
+        "|state|"
+    elseif mode === :real
+        "Re(state)"
+    elseif mode === :imag
+        "Im(state)"
+    elseif mode === :phase
+        "arg(state)"
+    else
+        "state"
+    end
+end
+
+function _plot_state_discrete(
+    qc::QuasiCrystal.QuasicrystalData{D,T},
+    state::AbstractVector;
+    marker_size::Real,
+    palette,
+    title::AbstractString,
+    kwargs...,
+) where {D,T}
+    n = LatticeCore.num_sites(qc)
+    length(state) == n || throw(
+        DimensionMismatch(
+            "plot_state: length(state)=$(length(state)) != num_sites(qc)=$(n)."
+        ),
+    )
+    levels = sort!(unique(state))
+    level_to_idx = Dict(v => k for (k, v) in enumerate(levels))
+    color_idx = [level_to_idx[s] for s in state]
+    pal = palette === nothing ? Plots.palette(:tab10, max(length(levels), 2)) : palette
+
+    if D == 1
+        xs = [LatticeCore.position(qc, i)[1] for i in 1:n]
+        ys = zeros(n)
+        return Plots.scatter(
+            xs,
+            ys;
+            marker=:circle,
+            markersize=marker_size,
+            zcolor=color_idx,
+            color=pal,
+            colorbar=true,
+            colorbar_title="state level",
+            ylims=(-0.5, 0.5),
+            yticks=[],
+            xlabel="Position",
+            title=title,
+            label="",
+            kwargs...,
+        )
+    elseif D == 2
+        xs = [LatticeCore.position(qc, i)[1] for i in 1:n]
+        ys = [LatticeCore.position(qc, i)[2] for i in 1:n]
+        return Plots.scatter(
+            xs,
+            ys;
+            marker=:circle,
+            markersize=marker_size,
+            zcolor=color_idx,
+            color=pal,
+            colorbar=true,
+            colorbar_title="state level",
+            aspect_ratio=:equal,
+            xlabel="x",
+            ylabel="y",
+            title=title,
+            label="",
+            kwargs...,
+        )
+    else
+        throw(
+            ArgumentError(
+                "plot_state: only D=1 and D=2 lattices are supported (got D=$(D))."
+            ),
+        )
+    end
+end
+
+function _plot_state_continuous(
+    qc::QuasiCrystal.QuasicrystalData{D,T},
+    values::AbstractVector{<:Real};
+    marker_size::Real,
+    colormap,
+    cbar_title::AbstractString,
+    title::AbstractString,
+    kwargs...,
+) where {D,T}
+    n = LatticeCore.num_sites(qc)
+    length(values) == n || throw(
+        DimensionMismatch(
+            "plot_state: length(state)=$(length(values)) != num_sites(qc)=$(n)."
+        ),
+    )
+    if D == 1
+        xs = [LatticeCore.position(qc, i)[1] for i in 1:n]
+        ys = zeros(n)
+        return Plots.scatter(
+            xs,
+            ys;
+            marker=:circle,
+            markersize=marker_size,
+            zcolor=values,
+            color=colormap,
+            colorbar=true,
+            colorbar_title=cbar_title,
+            ylims=(-0.5, 0.5),
+            yticks=[],
+            xlabel="Position",
+            title=title,
+            label="",
+            kwargs...,
+        )
+    elseif D == 2
+        xs = [LatticeCore.position(qc, i)[1] for i in 1:n]
+        ys = [LatticeCore.position(qc, i)[2] for i in 1:n]
+        return Plots.scatter(
+            xs,
+            ys;
+            marker=:circle,
+            markersize=marker_size,
+            zcolor=values,
+            color=colormap,
+            colorbar=true,
+            colorbar_title=cbar_title,
+            aspect_ratio=:equal,
+            xlabel="x",
+            ylabel="y",
+            title=title,
+            label="",
+            kwargs...,
+        )
+    else
+        throw(
+            ArgumentError(
+                "plot_state: only D=1 and D=2 lattices are supported (got D=$(D))."
+            ),
+        )
+    end
+end
+
+function QuasiCrystal.plot_state(
+    qc::QuasiCrystal.QuasicrystalData{D,T},
+    state::AbstractVector{<:Union{Bool,Integer}};
+    colormap=:viridis,
+    marker_size::Real=4,
+    palette=nothing,
+    title::AbstractString="QuasiCrystal state (discrete)",
+    kwargs...,
+) where {D,T}
+    return _plot_state_discrete(
+        qc, state; marker_size=marker_size, palette=palette, title=title, kwargs...
+    )
+end
+
+function QuasiCrystal.plot_state(
+    qc::QuasiCrystal.QuasicrystalData{D,T},
+    state::AbstractVector{<:Real};
+    colormap=:viridis,
+    marker_size::Real=4,
+    title::AbstractString="QuasiCrystal state",
+    kwargs...,
+) where {D,T}
+    return _plot_state_continuous(
+        qc,
+        state;
+        marker_size=marker_size,
+        colormap=colormap,
+        cbar_title="state",
+        title=title,
+        kwargs...,
+    )
+end
+
+function QuasiCrystal.plot_state(
+    qc::QuasiCrystal.QuasicrystalData{D,T},
+    state::AbstractVector{<:Complex};
+    mode::Symbol=:abs2,
+    colormap=:viridis,
+    marker_size::Real=4,
+    title::AbstractString="QuasiCrystal state",
+    kwargs...,
+) where {D,T}
+    values = _project_complex(state, mode)
+    return _plot_state_continuous(
+        qc,
+        values;
+        marker_size=marker_size,
+        colormap=colormap,
+        cbar_title=_mode_label(mode),
+        title=title,
+        kwargs...,
+    )
+end
+
 end # module QuasiCrystalPlotsExt
