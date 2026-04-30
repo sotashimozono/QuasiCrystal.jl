@@ -3,7 +3,6 @@ module QuasiCrystal
 using LinearAlgebra
 using SparseArrays
 using StaticArrays
-using Plots
 
 # ---- LatticeCore imports --------------------------------------------
 #
@@ -161,6 +160,7 @@ export window_shape
 export VERTEX_MERGE_TOL, SNAP_GRID_EPS, STAR_DIRECTION_TOL, positions_equal
 export build_nearest_neighbor_bonds!
 export visualize_quasicrystal_positions
+export plot_acceptance_window
 # Fourier analysis
 export IntervalWindow, BoxWindow, window_fourier
 export hyper_reciprocal_lattice, bragg_peaks
