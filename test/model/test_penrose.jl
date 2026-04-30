@@ -21,19 +21,27 @@
         @test position(qc, 1) isa SVector{2,Float64}
     end
 
-    @testset "substitution method (placeholder inflation)" begin
+    @testset "substitution method (Robinson-triangle inflation)" begin
         qc = generate_penrose_substitution(4)
         @test num_sites(qc) > 0
         @test qc.generation_method isa SubstitutionMethod
         @test qc.parameters[:generations] == 4
 
-        # For strict Robinson deflation, boundary half-tiles are dropped.
-        # So generations 1 or 2 actually lose full tiles. 
-        # By generation 4 and 5, bulk area dominates and tile count increases.
+        # Each generation of the Robinson-triangle deflation grows
+        # the patch (more half-tiles ⇒ more rhombi after pairing,
+        # more interior vertices). Boundary half-tiles do drop out
+        # of the rhombus pairing, but the bulk grows by a factor of
+        # ϕ² per generation, so monotonicity holds from gen ≥ 1.
         qc_4 = generate_penrose_substitution(4)
         qc_5 = generate_penrose_substitution(5)
         @test qc_5.parameters[:n_tiles] > qc_4.parameters[:n_tiles]
         @test num_sites(qc_5) > num_sites(qc_4)
+
+        # Issue #60: tile mix converges to the golden ratio. By
+        # generation 4 the bulk dominates the boundary and the
+        # observed `#FatRhombus / #ThinRhombus` lands inside the
+        # default tol=0.05 window of `ϕ`.
+        @test golden_ratio_check(qc_4).ok == true
     end
 
     @testset "LatticeCore traits" begin

@@ -122,7 +122,11 @@ using Test
         # The assertion is correctness; the @elapsed values are logged
         # for the PR description / future profiling.
         Random.seed!(19)
-        qc = generate_penrose_substitution(4)
+        # The Robinson-triangle inflation generator (issue #60 fix)
+        # produces a smaller patch per generation than the previous
+        # placeholder scaler — generation 6 is needed to clear the
+        # N > 1000 timing-test floor.
+        qc = generate_penrose_substitution(6)
         N = num_sites(qc)
         @test N > 1000
         peaks = bragg_peaks(qc; kmax=12.0, intensity_cutoff=1e-6)
