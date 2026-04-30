@@ -137,10 +137,7 @@ where `P = A + (B − A) / ϕ`.
 function subdivide_red(t::RobTri)
     A, B, C = t.A, t.B, t.C
     P = A + (B - A) / ϕ
-    return RobTri[
-        RobTri(:red, C, P, B),
-        RobTri(:blue, P, C, A),
-    ]
+    return RobTri[RobTri(:red, C, P, B), RobTri(:blue, P, C, A)]
 end
 
 """
@@ -167,11 +164,7 @@ function subdivide_blue(t::RobTri)
     A, B, C = t.A, t.B, t.C
     Q = B + (A - B) / ϕ
     R = B + (C - B) / ϕ
-    return RobTri[
-        RobTri(:blue, Q, B, R),
-        RobTri(:blue, R, C, A),
-        RobTri(:red, R, A, Q),
-    ]
+    return RobTri[RobTri(:blue, Q, B, R), RobTri(:blue, R, C, A), RobTri(:red, R, A, Q)]
 end
 
 """
@@ -399,9 +392,7 @@ function generate_penrose_substitution(
     s = isempty(tris) ? 1.0 : norm(tris[1].A - tris[1].B)
     if !(isapprox(s, 1.0))
         scale = 1.0 / s
-        tris = RobTri[
-            RobTri(t.kind, t.A * scale, t.B * scale, t.C * scale) for t in tris
-        ]
+        tris = RobTri[RobTri(t.kind, t.A * scale, t.B * scale, t.C * scale) for t in tris]
     end
 
     tiles_raw = merge_robinson_to_rhombi(tris)
@@ -455,9 +446,7 @@ tile list. The implementation:
 both fully wired through this routine; [`DirectTileInflation`](@ref)
 is currently a not-yet-implemented placeholder.
 """
-function inflate_penrose_tiles(
-    tiles::Vector{Tile{2,Float64}}, ::RobinsonTriangleInflation
-)
+function inflate_penrose_tiles(tiles::Vector{Tile{2,Float64}}, ::RobinsonTriangleInflation)
     tris = RobTri[]
     sizehint!(tris, 2 * length(tiles))
     for tile in tiles
@@ -521,18 +510,12 @@ function _split_rhombus_to_robinson(tile::Tile{2,Float64})
         # diagonal — the two half-tiles still differ in apex parity
         # (`B → C` traversed CCW vs CW around `A`), but the deflation
         # rule is parity-agnostic.
-        return RobTri[
-            RobTri(:blue, v2, v1, v3),
-            RobTri(:blue, v4, v1, v3),
-        ]
+        return RobTri[RobTri(:blue, v2, v1, v3), RobTri(:blue, v4, v1, v3)]
     elseif tile.type isa ThinRhombus
         # v1, v3 are the 144° corners (short-diagonal endpoints);
         # v2, v4 are the 36° corners (apex of each red half-tile).
         # Same `(B, C) = (v1, v3)` labelling rationale as above.
-        return RobTri[
-            RobTri(:red, v2, v1, v3),
-            RobTri(:red, v4, v1, v3),
-        ]
+        return RobTri[RobTri(:red, v2, v1, v3), RobTri(:red, v4, v1, v3)]
     else
         throw(ArgumentError("unsupported tile type $(tile.type) for Penrose split"))
     end
