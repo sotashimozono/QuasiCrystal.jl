@@ -132,6 +132,7 @@ include("core/model/ammann_beenker.jl")
 include("core/fourier/window.jl")
 include("core/fourier/fourier.jl")
 include("utils/visualization.jl")
+include("analysis/vertex_coordination.jl")
 
 # ---- Exports ---------------------------------------------------------
 
@@ -147,6 +148,7 @@ export inflate_tiles
 export QuasicrystalData, Tile
 export TileType, FatRhombus, ThinRhombus, Square, RhombusAB, tile_type_symbol
 export vertex_angles, vertex_configuration
+export coordination, vertex_type, vertex_type_counts
 export GOLDEN_RATIO, ϕ
 export FibonacciLattice, PenroseP3, AmmannBeenker
 export generate_fibonacci_projection, generate_fibonacci_substitution
