@@ -140,6 +140,8 @@ using Test
         scale = max(maximum(abs.(S_naive)), 1.0)
         @test absdiff / scale < 1e-10
 
-        @info "structure_factor benchmark" N M t_naive_ms = round(t_naive * 1000, digits=2) t_nufft_ms = round(t_nufft * 1000, digits=2) ratio = round(t_naive / max(t_nufft, eps()), digits=2)
+        @info "structure_factor benchmark" N M t_naive_ms = round(t_naive * 1000, digits=2) t_nufft_ms = round(
+            t_nufft * 1000, digits=2
+        ) ratio = round(t_naive / max(t_nufft, eps()), digits=2)
     end
 end
