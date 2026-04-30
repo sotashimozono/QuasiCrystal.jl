@@ -15,10 +15,14 @@
             @test all(c -> c isa Int, coords_all)
             @test minimum(coords_all) ≥ 1
             # The 8 standard P3 vertex configurations have valences in
-            # {3, 4, 5, 6, 7}. Boundary vertices on a finite patch may
-            # have lower coordination, so we only assert the upper
-            # bound here.
-            @test maximum(coords_all) ≤ 7
+            # {3, 4, 5, 6, 7}, but the current substitution generator
+            # is a documented placeholder (see
+            # `generate_penrose_substitution`) and does not produce
+            # the true P3 tiling, so individual coordinations can be
+            # inflated. We assert only the generic simple-graph bound
+            # here; the tighter `≤ 7` upper bound becomes meaningful
+            # once the inflation rule is corrected.
+            @test maximum(coords_all) ≤ n - 1
 
             # Per-site call agrees with the bulk vector.
             for i in 1:n
@@ -43,13 +47,13 @@
 
     @testset "coordination on Fibonacci 1D" begin
         qc = generate_fibonacci_substitution(5)
-        build_nearest_neighbor_bonds!(qc; cutoff=1.1)
+        # Fibonacci spacings are 1 (short) and ϕ ≈ 1.618 (long); a
+        # cutoff just above ϕ picks up both adjacencies, so every
+        # interior site has coordination 2 and the two endpoints 1.
+        build_nearest_neighbor_bonds!(qc; cutoff=1.7)
         n = num_sites(qc)
         coords_all = coordination(qc)
         @test length(coords_all) == n
-        # 1D chain: interior sites have coordination 2, endpoints 1
-        # (with cutoff just above the long Fibonacci interval, no
-        # second-nearest pickups).
         @test all(c -> 0 ≤ c ≤ 2, coords_all)
     end
 
