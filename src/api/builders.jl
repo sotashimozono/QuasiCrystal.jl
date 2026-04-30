@@ -57,9 +57,7 @@ function ammann_beenker(
     n::Int=3;
     method::Union{SubstitutionMethod,AbstractSubstitutionAlgorithm}=SubstitutionMethod(),
 )
-    return generate_ammann_beenker_substitution(
-        n; method=_as_substitution_method(method)
-    )
+    return generate_ammann_beenker_substitution(n; method=_as_substitution_method(method))
 end
 
 """
@@ -89,9 +87,7 @@ physical-space radius `radius`. Equivalent to
 The default `radius = 5.0` is large enough to expose 5-fold
 rotational symmetry while staying cheap to construct.
 """
-function penrose_projected(
-    radius::Real=5.0; method::ProjectionMethod=ProjectionMethod()
-)
+function penrose_projected(radius::Real=5.0; method::ProjectionMethod=ProjectionMethod())
     return generate_penrose_projection(radius; method=method)
 end
 
@@ -117,9 +113,7 @@ Build a 1D Fibonacci chain via the cut-and-project route, taking
 the first `n_points` projected sites. Equivalent to
 `generate_fibonacci_projection(n_points; method=method)`.
 """
-function fibonacci_projected(
-    n_points::Int=100; method::ProjectionMethod=ProjectionMethod()
-)
+function fibonacci_projected(n_points::Int=100; method::ProjectionMethod=ProjectionMethod())
     return generate_fibonacci_projection(n_points; method=method)
 end
 
