@@ -112,7 +112,7 @@ function QuasiCrystal.plot_acceptance_window(
     else
         throw(
             ArgumentError(
-                "plot_acceptance_window does not yet handle window_shape == :$(shape).",
+                "plot_acceptance_window does not yet handle window_shape == :$(shape)."
             ),
         )
     end
@@ -364,24 +364,24 @@ end
 # ====================================================================
 
 const _PALETTE_DEFAULT = Dict{QuasiCrystal.TileType,Any}(
-    QuasiCrystal.FatRhombus()  => RGB(0.96, 0.69, 0.36),
+    QuasiCrystal.FatRhombus() => RGB(0.96, 0.69, 0.36),
     QuasiCrystal.ThinRhombus() => RGB(0.39, 0.55, 0.78),
-    QuasiCrystal.Square()      => RGB(0.34, 0.60, 0.74),
-    QuasiCrystal.RhombusAB()   => RGB(0.90, 0.55, 0.35),
+    QuasiCrystal.Square() => RGB(0.34, 0.60, 0.74),
+    QuasiCrystal.RhombusAB() => RGB(0.90, 0.55, 0.35),
 )
 
 const _PALETTE_PASTEL = Dict{QuasiCrystal.TileType,Any}(
-    QuasiCrystal.FatRhombus()  => RGB(0.99, 0.86, 0.71),
+    QuasiCrystal.FatRhombus() => RGB(0.99, 0.86, 0.71),
     QuasiCrystal.ThinRhombus() => RGB(0.74, 0.83, 0.93),
-    QuasiCrystal.Square()      => RGB(0.74, 0.87, 0.91),
-    QuasiCrystal.RhombusAB()   => RGB(0.99, 0.81, 0.71),
+    QuasiCrystal.Square() => RGB(0.74, 0.87, 0.91),
+    QuasiCrystal.RhombusAB() => RGB(0.99, 0.81, 0.71),
 )
 
 const _PALETTE_BW = Dict{QuasiCrystal.TileType,Any}(
-    QuasiCrystal.FatRhombus()  => RGB(0.85, 0.85, 0.85),
+    QuasiCrystal.FatRhombus() => RGB(0.85, 0.85, 0.85),
     QuasiCrystal.ThinRhombus() => RGB(0.55, 0.55, 0.55),
-    QuasiCrystal.Square()      => RGB(0.85, 0.85, 0.85),
-    QuasiCrystal.RhombusAB()   => RGB(0.55, 0.55, 0.55),
+    QuasiCrystal.Square() => RGB(0.85, 0.85, 0.85),
+    QuasiCrystal.RhombusAB() => RGB(0.55, 0.55, 0.55),
 )
 
 const _PALETTE_PRESETS = (:default, :pastel, :bw)
@@ -420,11 +420,11 @@ function _resolve_palette(palette)
     end
 end
 
-_tile_label(::QuasiCrystal.FatRhombus)  = "Fat rhombus"
+_tile_label(::QuasiCrystal.FatRhombus) = "Fat rhombus"
 _tile_label(::QuasiCrystal.ThinRhombus) = "Thin rhombus"
-_tile_label(::QuasiCrystal.Square)      = "Square"
-_tile_label(::QuasiCrystal.RhombusAB)   = "Rhombus (AB)"
-_tile_label(t::QuasiCrystal.TileType)   = string(QuasiCrystal.tile_type_symbol(t))
+_tile_label(::QuasiCrystal.Square) = "Square"
+_tile_label(::QuasiCrystal.RhombusAB) = "Rhombus (AB)"
+_tile_label(t::QuasiCrystal.TileType) = string(QuasiCrystal.tile_type_symbol(t))
 
 @inline function _tile_polygon_xy(tile::QuasiCrystal.Tile{2,T}) where {T}
     v = tile.vertices
@@ -457,9 +457,7 @@ function _group_tiles_by_type(tiles)
     return groups
 end
 
-function QuasiCrystal.plot_tiles(
-    ::QuasiCrystal.QuasicrystalData{1,T}; kwargs...
-) where {T}
+function QuasiCrystal.plot_tiles(::QuasiCrystal.QuasicrystalData{1,T}; kwargs...) where {T}
     throw(
         ArgumentError(
             "plot_tiles: only 2D quasicrystals carry tiles; got D=1. " *
@@ -555,12 +553,21 @@ function _project_complex(state::AbstractVector{<:Complex}, mode::Symbol)
     return [_project_complex(z, v) for z in state]
 end
 
-_mode_label(mode::Symbol) = mode === :abs2 ? "|state|^2" :
-    mode === :abs ? "|state|" :
-    mode === :real ? "Re(state)" :
-    mode === :imag ? "Im(state)" :
-    mode === :phase ? "arg(state)" :
-    "state"
+function _mode_label(mode::Symbol)
+    if mode === :abs2
+        "|state|^2"
+    elseif mode === :abs
+        "|state|"
+    elseif mode === :real
+        "Re(state)"
+    elseif mode === :imag
+        "Im(state)"
+    elseif mode === :phase
+        "arg(state)"
+    else
+        "state"
+    end
+end
 
 function _plot_state_discrete(
     qc::QuasiCrystal.QuasicrystalData{D,T},
@@ -620,7 +627,11 @@ function _plot_state_discrete(
             kwargs...,
         )
     else
-        throw(ArgumentError("plot_state: only D=1 and D=2 lattices are supported (got D=$(D))."))
+        throw(
+            ArgumentError(
+                "plot_state: only D=1 and D=2 lattices are supported (got D=$(D))."
+            ),
+        )
     end
 end
 
@@ -678,7 +689,11 @@ function _plot_state_continuous(
             kwargs...,
         )
     else
-        throw(ArgumentError("plot_state: only D=1 and D=2 lattices are supported (got D=$(D))."))
+        throw(
+            ArgumentError(
+                "plot_state: only D=1 and D=2 lattices are supported (got D=$(D))."
+            ),
+        )
     end
 end
 
@@ -692,12 +707,7 @@ function QuasiCrystal.plot_state(
     kwargs...,
 ) where {D,T}
     return _plot_state_discrete(
-        qc,
-        state;
-        marker_size=marker_size,
-        palette=palette,
-        title=title,
-        kwargs...,
+        qc, state; marker_size=marker_size, palette=palette, title=title, kwargs...
     )
 end
 
