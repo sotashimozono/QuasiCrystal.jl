@@ -9,18 +9,23 @@ using Plots
 """
     QuasiCrystalPlotsExt
 
-Plots-backed visualisation extension. Provides
+Optional Plots-backed visualisation extension. Loaded automatically
+once the user issues `using Plots` together with `using QuasiCrystal`.
+
+This extension provides the implementations for the public stubs
+declared in `src/utils/visualization.jl`:
 
 - `visualize_quasicrystal_positions(qc; kwargs...)` — physical-space
   scatter of a 1D or 2D quasicrystal point set.
 - `plot_acceptance_window(data; show_hyper_points, kwargs...)` —
   cut-and-project acceptance window with optional overlay of the
   hyper-lattice points projected to perpendicular space.
+- `plot_tiles(data; palette, ...)` — semantic tile-colouring recipe
+  for 2D quasicrystals; each tile is filled with a colour selected
+  from the active palette by its `TileType` tag.
 
-Loaded automatically once `using Plots` runs in the same session as
-`using QuasiCrystal`. The function stubs themselves are declared in
-`src/utils/visualization.jl` so that the public API is visible even
-when `Plots` has not been loaded yet.
+Keeping these in the extension keeps `Plots` out of the main module's
+load graph; users opt in by `using Plots`.
 """
 QuasiCrystalPlotsExt
 
@@ -31,8 +36,9 @@ QuasiCrystalPlotsExt
 function QuasiCrystal.visualize_quasicrystal_positions(
     qc::QuasiCrystal.QuasicrystalData{1,T}; kwargs...
 ) where {T}
-    positions_1d = [LatticeCore.position(qc, i)[1] for i in 1:LatticeCore.num_sites(qc)]
-    y_vals = zeros(length(positions_1d))
+    n = LatticeCore.num_sites(qc)
+    positions_1d = [LatticeCore.position(qc, i)[1] for i in 1:n]
+    y_vals = zeros(n)
 
     return Plots.scatter(
         positions_1d,
@@ -52,8 +58,9 @@ end
 function QuasiCrystal.visualize_quasicrystal_positions(
     qc::QuasiCrystal.QuasicrystalData{2,T}; kwargs...
 ) where {T}
-    x_vals = [LatticeCore.position(qc, i)[1] for i in 1:LatticeCore.num_sites(qc)]
-    y_vals = [LatticeCore.position(qc, i)[2] for i in 1:LatticeCore.num_sites(qc)]
+    n = LatticeCore.num_sites(qc)
+    x_vals = [LatticeCore.position(qc, i)[1] for i in 1:n]
+    y_vals = [LatticeCore.position(qc, i)[2] for i in 1:n]
 
     return Plots.scatter(
         x_vals,
@@ -73,8 +80,6 @@ end
 # ====================================================================
 # plot_acceptance_window
 # ====================================================================
-
-# ---- public entry point --------------------------------------------
 
 function QuasiCrystal.plot_acceptance_window(
     data::QuasiCrystal.QuasicrystalData;
@@ -107,7 +112,7 @@ function QuasiCrystal.plot_acceptance_window(
     else
         throw(
             ArgumentError(
-                "plot_acceptance_window does not yet handle window_shape == :$(shape)."
+                "plot_acceptance_window does not yet handle window_shape == :$(shape).",
             ),
         )
     end
@@ -115,25 +120,12 @@ end
 
 # ---- helpers --------------------------------------------------------
 
-# Pull the perp_proj matrix and a half-width vector for the
-# perpendicular acceptance window. The perp projection comes from
-# `hyper_reciprocal_lattice` (the canonical source of perp
-# geometry); the half-widths come from the generator's own
-# direct-space filter so that the "inside" / "outside" colouring
-# in the recipe matches the integer points the generator actually
-# accepts.
 function _perp_geometry(data::QuasiCrystal.QuasicrystalData)
     hrl = QuasiCrystal.hyper_reciprocal_lattice(data)
     hw = _direct_half_widths(data, hrl)
     return (perp_proj=hrl.perp_proj, half_widths=hw)
 end
 
-# AB and Penrose store `:window_size` and use the same numeric
-# value on every perp axis. Fibonacci hardcodes `acceptance_width
-# = 1.0` (half-width 0.5) and does not stash it in `parameters`,
-# so we fall back on the generator's literal value there. If a
-# user supplies a custom generator that does record
-# `:window_size`, we honour it.
 function _direct_half_widths(
     data::QuasiCrystal.QuasicrystalData, hrl::LatticeCore.HyperReciprocalLattice
 )
@@ -142,25 +134,12 @@ function _direct_half_widths(
         ws = Float64(data.parameters[:window_size])
         return fill(ws, DPerp)
     end
-    # Fibonacci-style generators with no :window_size key default
-    # to the orthonormal-frame half-width 0.5, matching
-    # `generate_fibonacci_projection`'s `abs(pos_perp) <= 0.5`
-    # filter. If a custom generator deviates from this convention
-    # it should populate `:window_size` explicitly.
     return fill(0.5, DPerp)
 end
 
-# Default integer enumeration box. Penrose has DHyper = 5, so we keep
-# the radius small to avoid 11^5 ≈ 1.6e5 points dominating the figure.
 _default_n_hyper(::QuasiCrystal.QuasicrystalData{2,T,QuasiCrystal.PenroseP3}) where {T} = 3
 _default_n_hyper(::QuasiCrystal.QuasicrystalData) = 4
 
-# Enumerate every integer point in [-n, n]^DHyper exactly once,
-# returning their perpendicular-space projections. We strip the
-# `2π` factor that lives on `hyper_basis` because we want the
-# *direct-space* integer host points (Z^DHyper), not the reciprocal
-# ones — the educational picture is "which n ∈ Z^DHyper survive the
-# perp-window filter".
 function _projected_hyper_points(
     perp_proj::SMatrix{DPerp,DHyper,T}, n::Int
 ) where {DPerp,DHyper,T}
@@ -174,8 +153,6 @@ function _projected_hyper_points(
     return pts
 end
 
-# Return (inside, outside) splits — Vector{SVector{DPerp,Float64}}
-# pairs — using axis-aligned half-widths.
 function _split_points(
     pts::Vector{SVector{DPerp,Float64}}, half_widths::Vector{Float64}
 ) where {DPerp}
@@ -213,7 +190,6 @@ function _plot_window_interval(
         kwargs...,
     )
 
-    # Window: thick segment on y = 0 with end caps.
     Plots.plot!(
         plt, [-half, half], [0.0, 0.0]; linewidth=4, color=:steelblue, label="window"
     )
@@ -278,7 +254,6 @@ function _plot_window_box2d(
         kwargs...,
     )
 
-    # Filled rectangle.
     rect_x = [-a, a, a, -a, -a]
     rect_y = [-b, -b, b, b, -b]
     Plots.plot!(
@@ -323,12 +298,6 @@ function _plot_window_box2d(
 end
 
 # ---- :box_3d (Penrose P3) ------------------------------------------
-#
-# We cannot draw a true 3D acceptance cube cleanly inside the
-# default Plots GR backend without surface meshes, so the recipe
-# falls back on the classic "three orthogonal projections" view —
-# the y₁y₂, y₁y₃, and y₂y₃ planes side by side — each carrying the
-# corresponding 2D rectangular window cross-section.
 
 function _plot_window_box3d(
     data::QuasiCrystal.QuasicrystalData;
@@ -388,6 +357,181 @@ function _plot_window_box3d(
         size=(1200, 400),
         kwargs...,
     )
+end
+
+# ====================================================================
+# plot_tiles -- semantic tile-type colouring
+# ====================================================================
+
+const _PALETTE_DEFAULT = Dict{QuasiCrystal.TileType,Any}(
+    QuasiCrystal.FatRhombus()  => RGB(0.96, 0.69, 0.36),
+    QuasiCrystal.ThinRhombus() => RGB(0.39, 0.55, 0.78),
+    QuasiCrystal.Square()      => RGB(0.34, 0.60, 0.74),
+    QuasiCrystal.RhombusAB()   => RGB(0.90, 0.55, 0.35),
+)
+
+const _PALETTE_PASTEL = Dict{QuasiCrystal.TileType,Any}(
+    QuasiCrystal.FatRhombus()  => RGB(0.99, 0.86, 0.71),
+    QuasiCrystal.ThinRhombus() => RGB(0.74, 0.83, 0.93),
+    QuasiCrystal.Square()      => RGB(0.74, 0.87, 0.91),
+    QuasiCrystal.RhombusAB()   => RGB(0.99, 0.81, 0.71),
+)
+
+const _PALETTE_BW = Dict{QuasiCrystal.TileType,Any}(
+    QuasiCrystal.FatRhombus()  => RGB(0.85, 0.85, 0.85),
+    QuasiCrystal.ThinRhombus() => RGB(0.55, 0.55, 0.55),
+    QuasiCrystal.Square()      => RGB(0.85, 0.85, 0.85),
+    QuasiCrystal.RhombusAB()   => RGB(0.55, 0.55, 0.55),
+)
+
+const _PALETTE_PRESETS = (:default, :pastel, :bw)
+
+function _resolve_palette(palette)
+    if palette isa Symbol
+        if palette === :default
+            return _PALETTE_DEFAULT
+        elseif palette === :pastel
+            return _PALETTE_PASTEL
+        elseif palette === :bw
+            return _PALETTE_BW
+        else
+            throw(
+                ArgumentError(
+                    "plot_tiles: unknown palette $(repr(palette)). " *
+                    "Use one of $(_PALETTE_PRESETS) or pass a " *
+                    "Dict{TileType, Color}.",
+                ),
+            )
+        end
+    elseif palette isa AbstractDict
+        merged = copy(_PALETTE_DEFAULT)
+        for (k, v) in palette
+            merged[k] = v
+        end
+        return merged
+    else
+        throw(
+            ArgumentError(
+                "plot_tiles: palette must be a preset Symbol " *
+                "$(_PALETTE_PRESETS) or a Dict{TileType, Color}; " *
+                "got $(typeof(palette)).",
+            ),
+        )
+    end
+end
+
+_tile_label(::QuasiCrystal.FatRhombus)  = "Fat rhombus"
+_tile_label(::QuasiCrystal.ThinRhombus) = "Thin rhombus"
+_tile_label(::QuasiCrystal.Square)      = "Square"
+_tile_label(::QuasiCrystal.RhombusAB)   = "Rhombus (AB)"
+_tile_label(t::QuasiCrystal.TileType)   = string(QuasiCrystal.tile_type_symbol(t))
+
+@inline function _tile_polygon_xy(tile::QuasiCrystal.Tile{2,T}) where {T}
+    v = tile.vertices
+    n = length(v)
+    xs = Vector{Float64}(undef, n + 1)
+    ys = Vector{Float64}(undef, n + 1)
+    @inbounds for k in 1:n
+        xs[k] = Float64(v[k][1])
+        ys[k] = Float64(v[k][2])
+    end
+    xs[n + 1] = xs[1]
+    ys[n + 1] = ys[1]
+    return xs, ys
+end
+
+function _group_tiles_by_type(tiles)
+    groups = Vector{Pair{QuasiCrystal.TileType,Vector{Int}}}()
+    seen = Dict{Any,Int}()
+    for (i, t) in enumerate(tiles)
+        ty = t.type
+        key = typeof(ty)
+        idx = get(seen, key, 0)
+        if idx == 0
+            push!(groups, ty => Int[i])
+            seen[key] = length(groups)
+        else
+            push!(groups[idx].second, i)
+        end
+    end
+    return groups
+end
+
+function QuasiCrystal.plot_tiles(
+    ::QuasiCrystal.QuasicrystalData{1,T}; kwargs...
+) where {T}
+    throw(
+        ArgumentError(
+            "plot_tiles: only 2D quasicrystals carry tiles; got D=1. " *
+            "Use visualize_quasicrystal_positions for 1D point sets.",
+        ),
+    )
+end
+
+function QuasiCrystal.plot_tiles(
+    data::QuasiCrystal.QuasicrystalData{2,T};
+    palette=:default,
+    show_boundary::Bool=true,
+    boundary_color=:black,
+    boundary_width::Real=0.5,
+    legend::Bool=true,
+    title::AbstractString="Quasicrystal tiling",
+    kwargs...,
+) where {T}
+    tiles = data.tiles
+    isempty(tiles) && throw(
+        ArgumentError(
+            "plot_tiles: data.tiles is empty. The projection-method " *
+            "generators do not currently populate tiles; use " *
+            "generate_*_substitution(...) instead.",
+        ),
+    )
+
+    pal = _resolve_palette(palette)
+
+    p = Plots.plot(;
+        aspect_ratio=:equal,
+        xlabel="x",
+        ylabel="y",
+        title=title,
+        legend=legend ? :topright : false,
+        kwargs...,
+    )
+
+    groups = _group_tiles_by_type(tiles)
+
+    for (tile_type, indices) in groups
+        fill_color = get(pal, tile_type, get(_PALETTE_DEFAULT, tile_type, :gray))
+        label = _tile_label(tile_type)
+
+        shapes = Vector{Plots.Shape}(undef, length(indices))
+        @inbounds for (k, i) in enumerate(indices)
+            xs, ys = _tile_polygon_xy(tiles[i])
+            shapes[k] = Plots.Shape(xs, ys)
+        end
+
+        if show_boundary
+            Plots.plot!(
+                p,
+                shapes;
+                fillcolor=fill_color,
+                linecolor=boundary_color,
+                linewidth=boundary_width,
+                label=label,
+            )
+        else
+            Plots.plot!(
+                p,
+                shapes;
+                fillcolor=fill_color,
+                linecolor=fill_color,
+                linewidth=0,
+                label=label,
+            )
+        end
+    end
+
+    return p
 end
 
 end # module QuasiCrystalPlotsExt

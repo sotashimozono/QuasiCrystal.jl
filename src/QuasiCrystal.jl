@@ -161,6 +161,7 @@ export VERTEX_MERGE_TOL, SNAP_GRID_EPS, STAR_DIRECTION_TOL, positions_equal
 export build_nearest_neighbor_bonds!
 export visualize_quasicrystal_positions
 export plot_acceptance_window
+export plot_tiles
 # Fourier analysis
 export IntervalWindow, BoxWindow, window_fourier
 export hyper_reciprocal_lattice, bragg_peaks

@@ -2,8 +2,10 @@ using Aqua
 using QuasiCrystal
 
 @testset "Aqua quality checks" begin
-    # Full Aqua sweep, with fine-grained skips below for known
-    # cross-package method ambiguities (LatticeCore / NearestNeighbors).
+    # Full Aqua sweep. Plots was previously ignored in `stale_deps`
+    # because the dispatch only fired through the top-level `using
+    # Plots`; it is now a `[weakdeps]` trigger for
+    # `QuasiCrystalPlotsExt` so the default Aqua check passes.
     Aqua.test_all(QuasiCrystal; ambiguities=false)
 
     # Run ambiguity check restricted to QuasiCrystal itself, so that
