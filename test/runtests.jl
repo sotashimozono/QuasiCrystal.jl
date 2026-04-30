@@ -3,7 +3,7 @@ ENV["GKSwstype"] = "100"
 using QuasiCrystal, Test
 using LinearAlgebra
 using StaticArrays
-const dirs = ["model"]
+const dirs = ["model", "analysis"]
 
 @testset "tests" begin
     test_args = copy(ARGS)
