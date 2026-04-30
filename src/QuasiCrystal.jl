@@ -134,6 +134,7 @@ include("core/fourier/fourier.jl")
 include("analysis/tile_statistics.jl")
 include("utils/visualization.jl")
 include("analysis/vertex_coordination.jl")
+include("api/builders.jl")
 
 # ---- Exports ---------------------------------------------------------
 
@@ -158,6 +159,9 @@ export generate_fibonacci_projection, generate_fibonacci_substitution
 export generate_penrose_projection, generate_penrose_substitution
 export generate_ammann_beenker_projection, generate_ammann_beenker_substitution
 export fibonacci_sequence_length
+# Convenience builder API (thin wrappers, see src/api/builders.jl)
+export fibonacci, penrose, ammann_beenker
+export fibonacci_projected, penrose_projected, ammann_beenker_projected
 export build_quasicrystal
 export get_positions, get_bonds, get_nearest_neighbors, num_bonds
 export num_plaquettes, bond_type

@@ -31,7 +31,7 @@ in `data.tiles` to the number of tiles of that type. Returns an empty
 dict for tilings without tiles (e.g. 1D Fibonacci, where the chain is
 described purely by site positions).
 
-```jldoctest
+```jldoctest; setup = :(using QuasiCrystal)
 julia> qc = generate_penrose_substitution(3);
 
 julia> counts = tile_counts(qc);
