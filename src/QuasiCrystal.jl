@@ -131,6 +131,7 @@ include("core/model/penrose.jl")
 include("core/model/ammann_beenker.jl")
 include("core/fourier/window.jl")
 include("core/fourier/fourier.jl")
+include("analysis/tile_statistics.jl")
 include("utils/visualization.jl")
 include("analysis/vertex_coordination.jl")
 
@@ -149,6 +150,8 @@ export QuasicrystalData, Tile
 export TileType, FatRhombus, ThinRhombus, Square, RhombusAB, tile_type_symbol
 export vertex_angles, vertex_configuration
 export coordination, vertex_type, vertex_type_counts
+# Tile-level statistics (see src/analysis/tile_statistics.jl)
+export tile_counts, tile_density, tile_area, golden_ratio_check, tile_perimeter
 export GOLDEN_RATIO, ϕ
 export FibonacciLattice, PenroseP3, AmmannBeenker
 export generate_fibonacci_projection, generate_fibonacci_substitution
