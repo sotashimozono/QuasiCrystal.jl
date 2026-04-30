@@ -39,13 +39,12 @@
     end
 
     @testset "golden_ratio_check API surface" begin
-        # The current Penrose substitution implementation is a documented
-        # placeholder that does *not* converge to the true Penrose tiling
-        # (see generate_penrose_substitution docstring). We therefore test
-        # the golden_ratio_check API on a synthetic tiling whose tile
-        # counts hit the golden ratio exactly, and on a synthetic tiling
-        # whose ratio is far off — verifying both ok=true and ok=false
-        # branches.
+        # `golden_ratio_check` is exercised on (i) synthetic tilings
+        # with engineered tile counts (covering both ok=true and
+        # ok=false branches), and (ii) the actual substitution
+        # generator (issue #60: now uses Robinson-triangle inflation,
+        # so the asymptotic `#fat / #thin → ϕ` is recovered up to
+        # boundary effects).
         function _synthetic(n_fat::Int, n_thin::Int)
             tiles = Tile{2,Float64}[]
             v0 = SVector{2,Float64}(0.0, 0.0)
@@ -92,13 +91,16 @@
         only_fat = _synthetic(5, 0)
         @test_throws ArgumentError golden_ratio_check(only_fat)
 
-        # Smoke test on the actual generator: API returns the right
-        # NamedTuple shape regardless of placeholder convergence.
+        # Real generator (Robinson-triangle inflation, issue #60).
+        # Generation 4 already lands inside the default tol=0.05
+        # window of `ϕ`; the bulk recurrence is exact, so only
+        # patch-boundary half-tiles drag the ratio.
         qc = generate_penrose_substitution(4)
-        r_gen = golden_ratio_check(qc; tol=10.0)
+        r_gen = golden_ratio_check(qc)
         @test propertynames(r_gen) == (:observed, :expected, :ok)
         @test r_gen.expected ≈ ϕ
         @test r_gen.observed > 0
+        @test r_gen.ok == true
     end
 
     @testset "Ammann–Beenker tile mix" begin
