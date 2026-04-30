@@ -107,7 +107,7 @@ function QuasiCrystal.plot_acceptance_window(
     else
         throw(
             ArgumentError(
-                "plot_acceptance_window does not yet handle window_shape == :$(shape).",
+                "plot_acceptance_window does not yet handle window_shape == :$(shape)."
             ),
         )
     end
@@ -135,8 +135,7 @@ end
 # user supplies a custom generator that does record
 # `:window_size`, we honour it.
 function _direct_half_widths(
-    data::QuasiCrystal.QuasicrystalData,
-    hrl::LatticeCore.HyperReciprocalLattice,
+    data::QuasiCrystal.QuasicrystalData, hrl::LatticeCore.HyperReciprocalLattice
 )
     DPerp = size(hrl.perp_proj, 1)
     if haskey(data.parameters, :window_size)
@@ -162,7 +161,9 @@ _default_n_hyper(::QuasiCrystal.QuasicrystalData) = 4
 # *direct-space* integer host points (Z^DHyper), not the reciprocal
 # ones — the educational picture is "which n ∈ Z^DHyper survive the
 # perp-window filter".
-function _projected_hyper_points(perp_proj::SMatrix{DPerp,DHyper,T}, n::Int) where {DPerp,DHyper,T}
+function _projected_hyper_points(
+    perp_proj::SMatrix{DPerp,DHyper,T}, n::Int
+) where {DPerp,DHyper,T}
     pts = SVector{DPerp,Float64}[]
     sizehint!(pts, (2n + 1)^DHyper)
     ranges = ntuple(_ -> (-n):n, DHyper)
@@ -214,15 +215,17 @@ function _plot_window_interval(
 
     # Window: thick segment on y = 0 with end caps.
     Plots.plot!(
+        plt, [-half, half], [0.0, 0.0]; linewidth=4, color=:steelblue, label="window"
+    )
+    Plots.scatter!(
         plt,
         [-half, half],
         [0.0, 0.0];
-        linewidth=4,
+        marker=:vline,
+        markersize=12,
         color=:steelblue,
-        label="window",
+        label="",
     )
-    Plots.scatter!(plt, [-half, half], [0.0, 0.0]; marker=:vline, markersize=12,
-                   color=:steelblue, label="")
 
     if show_hyper_points
         pts = _projected_hyper_points(geom.perp_proj, n)
@@ -230,14 +233,23 @@ function _plot_window_interval(
         if !isempty(inside)
             xs = [p[1] for p in inside]
             ys = zeros(length(xs))
-            Plots.scatter!(plt, xs, ys; marker=:circle, markersize=4,
-                           color=:darkorange, label="inside")
+            Plots.scatter!(
+                plt, xs, ys; marker=:circle, markersize=4, color=:darkorange, label="inside"
+            )
         end
         if !isempty(outside)
             xs = [p[1] for p in outside]
             ys = zeros(length(xs))
-            Plots.scatter!(plt, xs, ys; marker=:circle, markersize=3,
-                           color=:gray, label="outside", alpha=0.5)
+            Plots.scatter!(
+                plt,
+                xs,
+                ys;
+                marker=:circle,
+                markersize=3,
+                color=:gray,
+                label="outside",
+                alpha=0.5,
+            )
         end
     end
 
@@ -287,14 +299,23 @@ function _plot_window_box2d(
         if !isempty(inside)
             xs = [p[1] for p in inside]
             ys = [p[2] for p in inside]
-            Plots.scatter!(plt, xs, ys; marker=:circle, markersize=4,
-                           color=:darkorange, label="inside")
+            Plots.scatter!(
+                plt, xs, ys; marker=:circle, markersize=4, color=:darkorange, label="inside"
+            )
         end
         if !isempty(outside)
             xs = [p[1] for p in outside]
             ys = [p[2] for p in outside]
-            Plots.scatter!(plt, xs, ys; marker=:circle, markersize=3,
-                           color=:gray, label="outside", alpha=0.5)
+            Plots.scatter!(
+                plt,
+                xs,
+                ys;
+                marker=:circle,
+                markersize=3,
+                color=:gray,
+                label="outside",
+                alpha=0.5,
+            )
         end
     end
 
@@ -320,19 +341,18 @@ function _plot_window_box3d(
     @assert length(hw) == 3
     n = n_hyper === nothing ? _default_n_hyper(data) : n_hyper
 
-    pts = show_hyper_points ? _projected_hyper_points(geom.perp_proj, n) :
+    pts = if show_hyper_points
+        _projected_hyper_points(geom.perp_proj, n)
+    else
         SVector{3,Float64}[]
+    end
     inside, outside = _split_points(pts, hw)
 
     panels = Plots.Plot[]
     for (i, j, label) in ((1, 2, "y₁ vs y₂"), (1, 3, "y₁ vs y₃"), (2, 3, "y₂ vs y₃"))
         a, b = hw[i], hw[j]
         sub = Plots.plot(;
-            xlabel="y$(i)",
-            ylabel="y$(j)",
-            aspect_ratio=:equal,
-            title=label,
-            legend=false,
+            xlabel="y$(i)", ylabel="y$(j)", aspect_ratio=:equal, title=label, legend=false
         )
         rect_x = [-a, a, a, -a, -a]
         rect_y = [-b, -b, b, b, -b]
@@ -349,14 +369,14 @@ function _plot_window_box3d(
         if !isempty(inside)
             xs = [p[i] for p in inside]
             ys = [p[j] for p in inside]
-            Plots.scatter!(sub, xs, ys; marker=:circle, markersize=3,
-                           color=:darkorange)
+            Plots.scatter!(sub, xs, ys; marker=:circle, markersize=3, color=:darkorange)
         end
         if !isempty(outside)
             xs = [p[i] for p in outside]
             ys = [p[j] for p in outside]
-            Plots.scatter!(sub, xs, ys; marker=:circle, markersize=2,
-                           color=:gray, alpha=0.4)
+            Plots.scatter!(
+                sub, xs, ys; marker=:circle, markersize=2, color=:gray, alpha=0.4
+            )
         end
         push!(panels, sub)
     end
