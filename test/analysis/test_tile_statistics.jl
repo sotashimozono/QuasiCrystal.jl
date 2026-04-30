@@ -67,11 +67,7 @@
             end
             positions = SVector{2,Float64}[v0]
             return QuasicrystalData{2,Float64}(
-                PenroseP3(),
-                positions,
-                tiles,
-                SubstitutionMethod(),
-                Dict{Symbol,Any}(),
+                PenroseP3(), positions, tiles, SubstitutionMethod(), Dict{Symbol,Any}()
             )
         end
 
