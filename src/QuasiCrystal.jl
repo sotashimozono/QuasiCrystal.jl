@@ -130,6 +130,7 @@ include("core/model/fibonacci.jl")
 include("core/model/fibonacci_phason.jl")
 include("core/model/penrose.jl")
 include("core/model/ammann_beenker.jl")
+include("core/cut_and_project.jl")
 include("core/fourier/window.jl")
 include("core/fourier/fourier.jl")
 include("analysis/tile_statistics.jl")
@@ -164,6 +165,8 @@ export fibonacci_sequence_length
 export PHASON_INTERCEPT_FIBONACCI
 export fibonacci_word, phason_orbit_at, bond_couplings
 export phason_grid_shift, inflation_matrix, J_fourier_coeffs
+# Unified cut-and-project framework (see src/core/cut_and_project.jl)
+export CutAndProjectDimensions, cut_and_project_dimensions
 # Convenience builder API (thin wrappers, see src/api/builders.jl)
 export fibonacci, penrose, ammann_beenker
 export fibonacci_projected, penrose_projected, ammann_beenker_projected
