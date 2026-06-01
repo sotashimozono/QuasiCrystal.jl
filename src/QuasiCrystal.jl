@@ -127,6 +127,7 @@ include("core/numerics.jl")
 include("core/interface.jl")
 include("core/element_api.jl")
 include("core/model/fibonacci.jl")
+include("core/model/fibonacci_phason.jl")
 include("core/model/penrose.jl")
 include("core/model/ammann_beenker.jl")
 include("core/fourier/window.jl")
@@ -159,6 +160,10 @@ export generate_fibonacci_projection, generate_fibonacci_substitution
 export generate_penrose_projection, generate_penrose_substitution
 export generate_ammann_beenker_projection, generate_ammann_beenker_substitution
 export fibonacci_sequence_length
+# Phason-space utilities (see src/core/model/fibonacci_phason.jl)
+export PHASON_INTERCEPT_FIBONACCI
+export fibonacci_word, phason_orbit_at, bond_couplings
+export phason_grid_shift, inflation_matrix, J_fourier_coeffs
 # Convenience builder API (thin wrappers, see src/api/builders.jl)
 export fibonacci, penrose, ammann_beenker
 export fibonacci_projected, penrose_projected, ammann_beenker_projected
