@@ -41,8 +41,9 @@ struct CutAndProjectDimensions
     D_perp::Int
 end
 
-CutAndProjectDimensions(; D_par, D_hyper) =
+function CutAndProjectDimensions(; D_par, D_hyper)
     CutAndProjectDimensions(D_par, D_hyper, D_hyper - D_par)
+end
 
 """
     cut_and_project_dimensions(::AbstractQuasicrystal) → CutAndProjectDimensions
@@ -62,9 +63,8 @@ not the canonical 2D Galois-conjugate embedding. See
 """
 function cut_and_project_dimensions end
 
-cut_and_project_dimensions(::FibonacciLattice) =
-    CutAndProjectDimensions(; D_par = 1, D_hyper = 2)
-cut_and_project_dimensions(::AmmannBeenker) =
-    CutAndProjectDimensions(; D_par = 2, D_hyper = 4)
-cut_and_project_dimensions(::PenroseP3) =
-    CutAndProjectDimensions(; D_par = 2, D_hyper = 5)
+function cut_and_project_dimensions(::FibonacciLattice)
+    CutAndProjectDimensions(; D_par=1, D_hyper=2)
+end
+cut_and_project_dimensions(::AmmannBeenker) = CutAndProjectDimensions(; D_par=2, D_hyper=4)
+cut_and_project_dimensions(::PenroseP3) = CutAndProjectDimensions(; D_par=2, D_hyper=5)

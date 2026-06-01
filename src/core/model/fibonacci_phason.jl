@@ -86,10 +86,7 @@ For α irrational (the Fibonacci case α = 1/ϕ) the orbit `{θ_i}` is
 equidistributed in `[0,1)`.
 """
 function phason_orbit_at(
-    ::FibonacciLattice,
-    i::Int;
-    θ0::Real=0.0,
-    α::Real=PHASON_INTERCEPT_FIBONACCI,
+    ::FibonacciLattice, i::Int; θ0::Real=0.0, α::Real=PHASON_INTERCEPT_FIBONACCI
 )
     return mod(float(θ0) + i * float(α), 1.0)
 end
@@ -109,9 +106,7 @@ This is the discrete-site version of the L/S step function
 `J(θ)` whose Fourier expansion is exposed by
 [`J_fourier_coeffs`](@ref).
 """
-function bond_couplings(
-    lat::FibonacciLattice, JL::Real, JS::Real; gen::Int
-)
+function bond_couplings(lat::FibonacciLattice, JL::Real, JS::Real; gen::Int)
     seq = fibonacci_word(lat, gen)
     return Float64[seq[i] == 0 ? Float64(JL) : Float64(JS) for i in 1:(length(seq) - 1)]
 end
@@ -131,9 +126,7 @@ wrapping with `mod1`.
 For irrational `α` this is the discretisation that an `M`-binned
 phason-space cocycle uses to advance one site.
 """
-function phason_grid_shift(
-    ::FibonacciLattice, M::Int; α::Real=PHASON_INTERCEPT_FIBONACCI
-)
+function phason_grid_shift(::FibonacciLattice, M::Int; α::Real=PHASON_INTERCEPT_FIBONACCI)
     return map(1:M) do k
         mod1(round(Int, mod((k - 1) / M + α, 1.0) * M) + 1, M)
     end
@@ -213,20 +206,14 @@ where `χ̂_{[a,b)}(k)` is the per-interval coefficient from
 the orbit average `⟨J⟩ = α·J_L + (1-α)·J_S` (mean Birkhoff sum).
 """
 function J_fourier_coeffs(
-    lat::FibonacciLattice,
-    JL::Real,
-    JS::Real,
-    K_J::Int;
-    α::Real=PHASON_INTERCEPT_FIBONACCI,
+    lat::FibonacciLattice, JL::Real, JS::Real, K_J::Int; α::Real=PHASON_INTERCEPT_FIBONACCI
 )
     L_intervals, S_intervals = _J_fourier_intervals(lat, α)
     JL_f = Float64(JL)
     JS_f = Float64(JS)
     return ComplexF64[
-        JL_f *
-        sum(_indicator_fourier_coefficient(a, b, k) for (a, b) in L_intervals) +
-        JS_f *
-        sum(_indicator_fourier_coefficient(a, b, k) for (a, b) in S_intervals) for
+        JL_f * sum(_indicator_fourier_coefficient(a, b, k) for (a, b) in L_intervals) +
+        JS_f * sum(_indicator_fourier_coefficient(a, b, k) for (a, b) in S_intervals) for
         k in (-K_J):K_J
     ]
 end
