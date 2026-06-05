@@ -91,6 +91,37 @@ function phason_orbit_at(
     return mod(float(θ0) + i * float(α), 1.0)
 end
 
+# ---- Bond tile classification on the phason torus ------------------
+
+"""
+    phason_bond_type(::FibonacciLattice, θ::Real;
+                     α::Real = PHASON_INTERCEPT_FIBONACCI) → Symbol
+
+Tile type (`:L` or `:S`) of the bond extending to the right of a site at
+phason coordinate `θ` on the unit torus `R / Z`. The rule is
+
+```math
+\\mathrm{bond}(θ) \\;=\\; :L \\quad\\Longleftrightarrow\\quad
+\\bigl\\{ θ + α \\bigr\\} \\;\\ge\\; 1 - α,
+```
+
+equivalently `θ ∈ [0, 1-α) ∪ [2-2α, 1)` after reducing mod 1. The
+complementary window `[1-α, 2-2α)` yields `:S`.
+
+When applied along the phason orbit `θ_i = {θ_0 + i α}` for
+`i = 0, 1, …`, the resulting `:L`/`:S` sequence reproduces
+[`fibonacci_word`](@ref) entry-for-entry (`0 = :L`, `1 = :S`) at
+`θ_0 = 0`. The partition coincides with the L/S windows used by
+[`J_fourier_coeffs`](@ref) (cf. [`_J_fourier_intervals`](@ref)), so
+`phason_bond_type` and `J_fourier_coeffs` operate on the same step
+function `J(θ)`.
+"""
+function phason_bond_type(::FibonacciLattice, θ::Real; α::Real=PHASON_INTERCEPT_FIBONACCI)
+    αf = float(α)
+    θ_next = mod(float(θ) + αf, 1.0)
+    return θ_next ≥ 1.0 - αf ? :L : :S
+end
+
 # ---- Bond coupling pattern -----------------------------------------
 
 """

@@ -163,7 +163,7 @@ export generate_ammann_beenker_projection, generate_ammann_beenker_substitution
 export fibonacci_sequence_length
 # Phason-space utilities (see src/core/model/fibonacci_phason.jl)
 export PHASON_INTERCEPT_FIBONACCI
-export fibonacci_word, phason_orbit_at, bond_couplings
+export fibonacci_word, phason_orbit_at, phason_bond_type, bond_couplings
 export phason_grid_shift, inflation_matrix, J_fourier_coeffs
 # Unified cut-and-project framework (see src/core/cut_and_project.jl)
 export CutAndProjectDimensions, cut_and_project_dimensions
