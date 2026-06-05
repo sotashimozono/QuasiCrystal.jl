@@ -53,6 +53,55 @@ using LinearAlgebra: eigvals
         @test abs(count(x -> x < 0.5, orbit) / N - 0.5) < 0.01
     end
 
+    @testset "phason_bond_type" begin
+        # Single-θ sanity for α = 1/ϕ ≈ 0.618: L windows ≈ [0, 0.382) ∪ [0.764, 1).
+        @test phason_bond_type(lat, 0.0) === :L
+        @test phason_bond_type(lat, 0.3) === :L
+        @test phason_bond_type(lat, 0.5) === :S
+        @test phason_bond_type(lat, 0.9) === :L
+
+        # Applied along the phason orbit at θ0 = 0 it reproduces the
+        # Fibonacci substitution word entry-for-entry (0 = :L, 1 = :S).
+        for gen in (3, 6, 9)
+            w = fibonacci_word(lat, gen)
+            for i in 1:(length(w) - 1)
+                θ = phason_orbit_at(lat, i - 1)
+                expected = w[i] == 0 ? :L : :S
+                @test phason_bond_type(lat, θ) === expected
+            end
+        end
+
+        # Partition consistency: phason_bond_type and J_fourier_coeffs
+        # must operate on the same indicator. JL=1, JS=0 ⇒ J(θ) = 1 iff
+        # phason_bond_type(θ) === :L. Test on a dense grid (skip near
+        # the discontinuities to avoid Gibbs ringing).
+        K_J = 80
+        Ĵ_LS = J_fourier_coeffs(lat, 1.0, 0.0, K_J)
+        function J_recon(θ::Real)
+            s = 0.0 + 0.0im
+            for (idx, k) in enumerate((-K_J):K_J)
+                s += Ĵ_LS[idx] * cis(2π * k * θ)
+            end
+            return real(s)
+        end
+        gap = 0.05
+        θs = vcat(
+            (0.0 + gap):0.01:((1.0 - α) - gap),
+            ((1.0 - α) + gap):0.01:((2.0 - 2α) - gap),
+            ((2.0 - 2α) + gap):0.01:(1.0 - gap),
+        )
+        for θ in θs
+            indicator = phason_bond_type(lat, θ) === :L ? 1.0 : 0.0
+            @test abs(J_recon(θ) - indicator) < 0.05
+        end
+
+        # Custom α override: rational slope α = 0.25.
+        # Rule: bond = :L iff mod(θ + 0.25, 1) ≥ 0.75, equivalently θ ∈ [0.5, 0.75).
+        @test phason_bond_type(lat, 0.1; α=0.25) === :S
+        @test phason_bond_type(lat, 0.6; α=0.25) === :L
+        @test phason_bond_type(lat, 0.8; α=0.25) === :S
+    end
+
     @testset "bond_couplings" begin
         # explicit gen 4 word = [0,1,0,0,1,0,1,0]; 7 bonds
         bs = bond_couplings(lat, 1.0, 0.5; gen=4)
