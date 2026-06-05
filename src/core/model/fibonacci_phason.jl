@@ -116,9 +116,7 @@ When applied along the phason orbit `θ_i = {θ_0 + i α}` for
 `phason_bond_type` and `J_fourier_coeffs` operate on the same step
 function `J(θ)`.
 """
-function phason_bond_type(
-    ::FibonacciLattice, θ::Real; α::Real=PHASON_INTERCEPT_FIBONACCI
-)
+function phason_bond_type(::FibonacciLattice, θ::Real; α::Real=PHASON_INTERCEPT_FIBONACCI)
     αf = float(α)
     θ_next = mod(float(θ) + αf, 1.0)
     return θ_next ≥ 1.0 - αf ? :L : :S
