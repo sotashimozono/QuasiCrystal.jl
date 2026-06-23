@@ -27,7 +27,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Need full history so the script can find the previous tag
           # via `git tag --sort=-creatordate` and `git log <tag>`.
