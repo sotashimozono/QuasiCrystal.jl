@@ -381,5 +381,7 @@ function bond_type(data::QuasicrystalData, i::Int, j::Int)
             return b.type
         end
     end
-    throw(ArgumentError("no bond between sites $i and $j on $(typeof(data).name.name)"))
+    return throw(
+        ArgumentError("no bond between sites $i and $j on $(typeof(data).name.name)")
+    )
 end
