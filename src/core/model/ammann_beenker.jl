@@ -247,7 +247,7 @@ end
 function inflate_ammann_beenker_tiles(
     ::Vector{Tile{2,Float64}}, alg::AbstractSubstitutionAlgorithm
 )
-    error(
+    return error(
         "$(typeof(alg)) is not yet implemented for AmmannBeenker. " *
         "Use DefaultSubstitution() or AmmannBeenkerInflation() instead.",
     )
@@ -256,5 +256,5 @@ end
 # Single-dispatch on the algorithm: `AmmannBeenkerInflation` is
 # AB-specific so this overload is unambiguous.
 function inflate_tiles(tiles::Vector{Tile{2,Float64}}, alg::AmmannBeenkerInflation)
-    inflate_ammann_beenker_tiles(tiles, alg)
+    return inflate_ammann_beenker_tiles(tiles, alg)
 end

@@ -468,7 +468,7 @@ end
 # Make the unimplemented status explicit instead of silently
 # delegating to a different algorithm.
 function inflate_penrose_tiles(::Vector{Tile{2,Float64}}, ::DirectTileInflation)
-    error(
+    return error(
         "DirectTileInflation is not yet implemented for PenroseP3. " *
         "Use DefaultSubstitution() or RobinsonTriangleInflation() instead.",
     )

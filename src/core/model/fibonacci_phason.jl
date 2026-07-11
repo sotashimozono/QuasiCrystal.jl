@@ -159,7 +159,7 @@ phason-space cocycle uses to advance one site.
 """
 function phason_grid_shift(::FibonacciLattice, M::Int; α::Real=PHASON_INTERCEPT_FIBONACCI)
     return map(1:M) do k
-        mod1(round(Int, mod((k - 1) / M + α, 1.0) * M) + 1, M)
+        return mod1(round(Int, mod((k - 1) / M + α, 1.0) * M) + 1, M)
     end
 end
 

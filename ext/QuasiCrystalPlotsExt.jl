@@ -458,7 +458,7 @@ function _group_tiles_by_type(tiles)
 end
 
 function QuasiCrystal.plot_tiles(::QuasiCrystal.QuasicrystalData{1,T}; kwargs...) where {T}
-    throw(
+    return throw(
         ArgumentError(
             "plot_tiles: only 2D quasicrystals carry tiles; got D=1. " *
             "Use visualize_quasicrystal_positions for 1D point sets.",
