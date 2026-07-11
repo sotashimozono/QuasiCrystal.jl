@@ -137,6 +137,7 @@ include("analysis/tile_statistics.jl")
 include("utils/visualization.jl")
 include("analysis/vertex_coordination.jl")
 include("analysis/tight_binding.jl")
+include("analysis/localization.jl")
 include("api/builders.jl")
 
 # ---- Exports ---------------------------------------------------------
@@ -181,6 +182,9 @@ export build_nearest_neighbor_bonds!
 # Tight-binding & spectral analysis (see src/analysis/tight_binding.jl)
 export tight_binding_hamiltonian, spectrum, eigenstates
 export inverse_participation_ratio, inverse_participation_ratios, density_of_states
+
+# Localization diagnostics (see src/analysis/localization.jl)
+export mean_inverse_participation_ratio, ipr_scaling, ipr_scaling_exponent
 export visualize_quasicrystal_positions
 export plot_acceptance_window
 export plot_tiles
