@@ -138,6 +138,7 @@ include("utils/visualization.jl")
 include("analysis/vertex_coordination.jl")
 include("analysis/tight_binding.jl")
 include("analysis/localization.jl")
+include("analysis/dynamic_structure_factor.jl")
 include("api/builders.jl")
 
 # ---- Exports ---------------------------------------------------------
@@ -185,6 +186,8 @@ export inverse_participation_ratio, inverse_participation_ratios, density_of_sta
 
 # Localization diagnostics (see src/analysis/localization.jl)
 export mean_inverse_participation_ratio, ipr_scaling, ipr_scaling_exponent
+# Momentum-resolved spectral function (see src/analysis/dynamic_structure_factor.jl)
+export dynamic_structure_factor
 export visualize_quasicrystal_positions
 export plot_acceptance_window
 export plot_tiles
