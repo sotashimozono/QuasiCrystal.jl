@@ -137,6 +137,7 @@ include("analysis/tile_statistics.jl")
 include("utils/visualization.jl")
 include("analysis/vertex_coordination.jl")
 include("analysis/tight_binding.jl")
+include("analysis/localization.jl")
 include("analysis/dynamic_structure_factor.jl")
 include("api/builders.jl")
 
@@ -183,6 +184,8 @@ export build_nearest_neighbor_bonds!
 export tight_binding_hamiltonian, spectrum, eigenstates
 export inverse_participation_ratio, inverse_participation_ratios, density_of_states
 
+# Localization diagnostics (see src/analysis/localization.jl)
+export mean_inverse_participation_ratio, ipr_scaling, ipr_scaling_exponent
 # Momentum-resolved spectral function (see src/analysis/dynamic_structure_factor.jl)
 export dynamic_structure_factor
 export visualize_quasicrystal_positions
