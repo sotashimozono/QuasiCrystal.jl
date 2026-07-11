@@ -172,7 +172,7 @@ LatticeCore.num_sites(data::QuasicrystalData) = length(data.positions)
 LatticeCore.position(data::QuasicrystalData, i::Int) = data.positions[i]
 
 function LatticeCore.boundary(::QuasicrystalData{D}) where {D}
-    LatticeBoundary(ntuple(_ -> OpenAxis(), D), NoModifier())
+    return LatticeBoundary(ntuple(_ -> OpenAxis(), D), NoModifier())
 end
 
 """
