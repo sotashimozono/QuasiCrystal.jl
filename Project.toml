@@ -1,6 +1,6 @@
 name = "QuasiCrystal"
 uuid = "7178fac9-d2bf-4933-964d-a28131e4f2a4"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["sotashimozono <shimozono-sota631@g.ecc.u-tokyo.ac.jp>"]
 
 [deps]
@@ -21,7 +21,7 @@ QuasiCrystalPlotsExt = "Plots"
 [compat]
 Aqua = "0.8"
 FINUFFT = "3"
-LatticeCore = "0.11"
+LatticeCore = "0.12"
 LinearAlgebra = "1.10"
 NearestNeighbors = "0.4"
 Plots = "1"
