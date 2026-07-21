@@ -16,23 +16,36 @@ function LatticeCore.scaling_rule(d::QuasicrystalData)
     return d.generation_method isa SubstitutionMethod ? SubstitutionScaling(1) : NoScaling()
 end
 
-_regenerate(::FibonacciLattice, g::Int, m::SubstitutionMethod) =
-    generate_fibonacci_substitution(g; method=m)
-_regenerate(::PenroseP3, g::Int, m::SubstitutionMethod) =
-    generate_penrose_substitution(g; method=m)
-_regenerate(::AmmannBeenker, g::Int, m::SubstitutionMethod) =
-    generate_ammann_beenker_substitution(g; method=m)
-_regenerate(topo, ::Int, ::SubstitutionMethod) = throw(ArgumentError(
-    "rescale: no substitution generator is registered for $(typeof(topo))"
-))
+function _regenerate(::FibonacciLattice, g::Int, m::SubstitutionMethod)
+    return generate_fibonacci_substitution(g; method=m)
+end
+function _regenerate(::PenroseP3, g::Int, m::SubstitutionMethod)
+    return generate_penrose_substitution(g; method=m)
+end
+function _regenerate(::AmmannBeenker, g::Int, m::SubstitutionMethod)
+    return generate_ammann_beenker_substitution(g; method=m)
+end
+function _regenerate(topo, ::Int, ::SubstitutionMethod)
+    return throw(
+        ArgumentError(
+            "rescale: no substitution generator is registered for $(typeof(topo))"
+        ),
+    )
+end
 
 # The generators always build with the default layout, so a non-default one has to be reattached.
 # A quasicrystal layout is a property of the site type, not of the patch size, so this is sound.
 function _with_layout(d::QuasicrystalData{D,T,Topo,TT}, layout) where {D,T,Topo,TT}
     layout === d.layout && return d
     return QuasicrystalData{D,T,Topo,TT,typeof(layout)}(
-        d.topology, d.positions, d.tiles, d.generation_method, d.parameters,
-        d.bonds, d.nearest_neighbors, layout,
+        d.topology,
+        d.positions,
+        d.tiles,
+        d.generation_method,
+        d.parameters,
+        d.bonds,
+        d.nearest_neighbors,
+        layout,
     )
 end
 
@@ -75,19 +88,25 @@ julia> num_sites.(size_sequence(d, 3))
 function LatticeCore.rescale(d::QuasicrystalData, k::Integer=1)
     k == 0 && return d
     method = d.generation_method
-    method isa SubstitutionMethod || throw(ArgumentError(
-        "rescale is defined only for substitution-generated quasicrystals; this patch was built " *
-        "by $(typeof(method)), whose extent is set by a window radius rather than a rule depth " *
-        "(scaling_rule = $(LatticeCore.scaling_rule(d)))."
-    ))
-    haskey(d.parameters, :generations) || throw(ArgumentError(
-        "rescale: this patch records no `:generations`, so its substitution depth is unknown."
-    ))
+    method isa SubstitutionMethod || throw(
+        ArgumentError(
+            "rescale is defined only for substitution-generated quasicrystals; this patch was built " *
+            "by $(typeof(method)), whose extent is set by a window radius rather than a rule depth " *
+            "(scaling_rule = $(LatticeCore.scaling_rule(d))).",
+        ),
+    )
+    haskey(d.parameters, :generations) || throw(
+        ArgumentError(
+            "rescale: this patch records no `:generations`, so its substitution depth is unknown.",
+        ),
+    )
     g = d.parameters[:generations]::Int + k * LatticeCore.scaling_rule(d).depth_step
-    g >= 0 || throw(ArgumentError(
-        "cannot step down $(-k) generation(s) from $(d.parameters[:generations]): " *
-        "the generation count would be $g."
-    ))
+    g >= 0 || throw(
+        ArgumentError(
+            "cannot step down $(-k) generation(s) from $(d.parameters[:generations]): " *
+            "the generation count would be $g.",
+        ),
+    )
     return _with_layout(_regenerate(d.topology, g, method), d.layout)
 end
 
@@ -99,8 +118,10 @@ to needs the parentage of each tile through the substitution, which the generato
 record. Always raises.
 """
 function LatticeCore.cell_partition(d::QuasicrystalData, k::Integer=1)
-    return throw(ArgumentError(
-        "cell_partition is not available for QuasicrystalData: inflation parentage (which vertex " *
-        "of generation n sits in which tile of generation n−$k) is not tracked by the generators."
-    ))
+    return throw(
+        ArgumentError(
+            "cell_partition is not available for QuasicrystalData: inflation parentage (which vertex " *
+            "of generation n sits in which tile of generation n−$k) is not tracked by the generators.",
+        ),
+    )
 end
