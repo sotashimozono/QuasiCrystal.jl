@@ -21,7 +21,7 @@ QuasiCrystalPlotsExt = "Plots"
 [compat]
 Aqua = "0.8"
 FINUFFT = "3"
-LatticeCore = "0.11"
+LatticeCore = "0.11, 0.12"
 LinearAlgebra = "1.10"
 NearestNeighbors = "0.4"
 Plots = "1"
