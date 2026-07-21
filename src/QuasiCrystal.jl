@@ -137,6 +137,7 @@ include("analysis/tile_statistics.jl")
 include("utils/visualization.jl")
 include("analysis/vertex_coordination.jl")
 include("api/builders.jl")
+include("api/scaling.jl")
 
 # ---- Exports ---------------------------------------------------------
 
