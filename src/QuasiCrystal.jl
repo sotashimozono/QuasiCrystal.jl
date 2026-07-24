@@ -180,6 +180,7 @@ export num_plaquettes, bond_type
 export window_shape
 export VERTEX_MERGE_TOL, SNAP_GRID_EPS, STAR_DIRECTION_TOL, positions_equal
 export build_nearest_neighbor_bonds!
+export build_chain_bonds!
 
 # Tight-binding, spectral analysis, localization diagnostics and the dynamic
 # structure factor are generic over `AbstractLattice` and now live in

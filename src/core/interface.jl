@@ -79,6 +79,40 @@ function build_nearest_neighbor_bonds!(
 end
 
 """
+    build_chain_bonds!(data::QuasicrystalData{1, T}) → data
+
+Populate `data.bonds` / `data.nearest_neighbors` with the edges of the
+1D chain: each site is bonded to its neighbours in position order (the
+tile edges of the quasiperiodic chain). Existing bonds are cleared
+first.
+
+Unlike [`build_nearest_neighbor_bonds!`](@ref), whose absolute distance
+`cutoff` selects a *fixed length scale*, consecutive-adjacency is
+**scale invariant**: it depends only on the ordering of the sites, not
+on their absolute spacing. It is therefore covariant under inflation —
+`build_chain_bonds!` on `materialize(inflate(inf))` yields the same
+bond graph as on `materialize(inf)`, with every bond vector scaled by
+the inflation factor λ — whereas a fixed `cutoff` would silently drop or
+add bonds once the chain is rescaled.
+"""
+function build_chain_bonds!(data::QuasicrystalData{1,T}) where {T}
+    empty!(data.bonds)
+    for nb in data.nearest_neighbors
+        empty!(nb)
+    end
+
+    order = sortperm(data.positions; by=p -> p[1])
+    for k in 1:(length(order) - 1)
+        i, j = order[k], order[k + 1]
+        bond_vec = data.positions[j] - data.positions[i]
+        push!(data.bonds, Bond{1,T}(i, j, bond_vec, :nearest))
+        push!(data.nearest_neighbors[i], j)
+        push!(data.nearest_neighbors[j], i)
+    end
+    return data
+end
+
+"""
     build_quasicrystal(type::Type{<:AbstractQuasicrystal};
                        generator::Symbol = :projection,
                        radius = 3.0,
