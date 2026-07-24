@@ -113,6 +113,60 @@ function build_chain_bonds!(data::QuasicrystalData{1,T}) where {T}
 end
 
 """
+    build_tile_bonds!(data::QuasicrystalData{D, T}) → data
+
+Populate `data.bonds` / `data.nearest_neighbors` with the edges of the
+tiling: every boundary edge of every tile in `data.tiles`, deduplicated
+across shared edges. Existing bonds are cleared first. The tiling's
+vertices are resolved to site indices through the same path as
+`plaquettes(data)`.
+
+This is the 2D counterpart of [`build_chain_bonds!`](@ref): the bond set
+is the *tiling-intrinsic* adjacency (which sites share a tile edge), so
+it carries **no length-scale parameter** — unlike
+[`build_nearest_neighbor_bonds!`](@ref), whose absolute `cutoff` fixes a
+scale and can catch short tile diagonals or miss edges once the patch is
+rescaled. For the Penrose and Ammann–Beenker rhombus tilings every such
+edge is a unit edge, so the graph is exactly the unit-edge network at any
+inflation generation.
+
+Throws if `data` has no tiling (e.g. a projection-generated patch, which
+records no tiles): use [`build_chain_bonds!`](@ref) for a 1D chain or
+[`build_nearest_neighbor_bonds!`](@ref) otherwise.
+"""
+function build_tile_bonds!(data::QuasicrystalData{D,T}) where {D,T}
+    empty!(data.bonds)
+    for nb in data.nearest_neighbors
+        empty!(nb)
+    end
+    isempty(data.tiles) && throw(
+        ArgumentError(
+            "build_tile_bonds! needs a tiling, but this patch records no tiles " *
+            "(projection-generated?). Use `build_chain_bonds!` (1D chain) or " *
+            "`build_nearest_neighbor_bonds!`.",
+        ),
+    )
+
+    seen = Set{Tuple{Int,Int}}()
+    for p in plaquettes(data)
+        vs = p.vertices
+        n = length(vs)
+        for k in 1:n
+            i, j = vs[k], vs[mod1(k + 1, n)]
+            i == j && continue
+            key = (min(i, j), max(i, j))
+            key in seen && continue
+            push!(seen, key)
+            bond_vec = data.positions[j] - data.positions[i]
+            push!(data.bonds, Bond{D,T}(i, j, bond_vec, :nearest))
+            push!(data.nearest_neighbors[i], j)
+            push!(data.nearest_neighbors[j], i)
+        end
+    end
+    return data
+end
+
+"""
     build_quasicrystal(type::Type{<:AbstractQuasicrystal};
                        generator::Symbol = :projection,
                        radius = 3.0,
