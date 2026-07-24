@@ -87,24 +87,15 @@ end
 
 The linear inflation factor λ (Perron eigenvalue of the family's
 substitution): the golden ratio ϕ for [`FibonacciLattice`](@ref) and
-[`PenroseP3`](@ref).
+[`PenroseP3`](@ref), and the silver ratio `1 + √2` for
+[`AmmannBeenker`](@ref).
 
-Throws for [`AmmannBeenker`](@ref): the shipped AB projection generator
-is not exactly self-similar, so [`inflate`](@ref) / [`deflate`](@ref)
-are not well-posed for it.
+For each shipped cut-and-project generator `λ·S ⊆ S` holds exactly, so
+[`inflate`](@ref) / [`deflate`](@ref) are well-posed.
 """
 inflation_factor(::FibonacciLattice) = (1 + sqrt(5)) / 2
 inflation_factor(::PenroseP3) = (1 + sqrt(5)) / 2
-function inflation_factor(::AmmannBeenker)
-    return throw(
-        ArgumentError(
-            "inflate/deflate is not available for Ammann–Beenker: the shipped " *
-            "projection generator is not exactly self-similar (λ·S ⊄ S numerically), " *
-            "so an exact inflation self-map is not well defined. Fibonacci and Penrose " *
-            "are supported.",
-        ),
-    )
-end
+inflation_factor(::AmmannBeenker) = 1 + sqrt(2)
 
 """
     inflate(inf::InfiniteQuasicrystal, k::Integer = 1) → InfiniteQuasicrystal

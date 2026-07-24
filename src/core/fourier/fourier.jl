@@ -130,13 +130,19 @@ function hyper_reciprocal_lattice(::QuasicrystalData{2,Float64,AmmannBeenker})
     # star vector.
     parallel_proj = SMatrix{2,4,T}(c0, s0, c1, s1, c2, s2, c3, s3)
 
-    # Perpendicular star: angles π/4, π/2, 3π/4, π — the shifted
-    # choice the generator currently filters with.
+    # Perpendicular star: angles π/4, π/2, 3π/4, π.
+    #
+    # !!! warning "Inconsistent with the corrected real-space generator"
+    #     `generate_ammann_beenker_projection` was corrected to use the
+    #     Galois-conjugate perp projection (angles `3·(k-1)·π/4`) and the
+    #     regular-octagon window, which makes the point set exactly
+    #     self-similar. This reciprocal model still uses the old shifted
+    #     perp star and a square window, so its Bragg intensities no
+    #     longer match the real-space set. Bringing it into line needs a
+    #     new octagon `AcceptanceWindow` with its Fourier transform —
+    #     tracked as a follow-up; the diffraction API is unchanged for now.
     perp_proj = SMatrix{2,4,T}(c1, s1, c2, s2, c3, s3, c4, s4)
 
-    # Square acceptance window of half-width 0.5 on each perp axis,
-    # matching `generate_ammann_beenker_projection`'s
-    # `all(abs.(pos_perp) .<= 0.5)` filter.
     window = BoxWindow(SVector{2,T}(0.5, 0.5))
 
     return HyperReciprocalLattice{2,4,2,T,typeof(window)}(

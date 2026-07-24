@@ -34,13 +34,25 @@ function generate_ammann_beenker_projection(
         E_par[i, 2] = sin((i - 1) * theta)
     end
 
+    # Perpendicular space is the *Galois-conjugate* eigenplane: the star
+    # vector `e_k` maps to angle `3·k·45°`, not `k·45° + 45°`. The 45°
+    # rotation used previously is not the conjugate, so the resulting set
+    # was not self-similar. With the conjugate projection the inflation
+    # `M` on `Z⁴` acts as `×(1+√2)` in physical space and `×(1−√2)` in
+    # perp space, so `(1+√2)·S ⊆ S` holds exactly.
     E_perp = zeros(4, 2)
     for i in 1:4
-        E_perp[i, 1] = cos((i - 1) * theta + π / 4)
-        E_perp[i, 2] = sin((i - 1) * theta + π / 4)
+        E_perp[i, 1] = cos((i - 1) * 3 * theta)
+        E_perp[i, 2] = sin((i - 1) * 3 * theta)
     end
 
-    window_size = 0.5
+    # Acceptance window: the regular octagon that is the perp projection
+    # of the unit 4-cube `[-1/2, 1/2]⁴` — the intersection of an
+    # axis-aligned and a 45°-rotated box, with apothem `(1+√2)/2`. A box
+    # (the old `window_size = 0.5` square) is the wrong shape and breaks
+    # self-similarity.
+    apothem = (1 + sqrt(2)) / 2
+    diag = apothem * sqrt(2)
     n_max = ceil(Int, radius * 1.5)
 
     # Pre-typed SVector buffer (avoids the legacy `Vector{Float64}[]`
@@ -49,6 +61,7 @@ function generate_ammann_beenker_projection(
     P = SMatrix{2,4,Float64}(E_par')
     Q = SMatrix{2,4,Float64}(E_perp')
 
+    tol = 1e-9
     for n1 in (-n_max):n_max,
         n2 in (-n_max):n_max, n3 in (-n_max):n_max,
         n4 in (-n_max):n_max
@@ -56,8 +69,11 @@ function generate_ammann_beenker_projection(
         lp = SVector{4,Float64}(float(n1), float(n2), float(n3), float(n4))
         pos_par = P * lp
         norm(pos_par) > radius && continue
-        pos_perp = Q * lp
-        if abs(pos_perp[1]) <= window_size && abs(pos_perp[2]) <= window_size
+        w = Q * lp
+        if abs(w[1]) <= apothem + tol &&
+            abs(w[2]) <= apothem + tol &&
+            abs(w[1] + w[2]) <= diag + tol &&
+            abs(w[1] - w[2]) <= diag + tol
             push!(positions, pos_par)
         end
     end
@@ -66,8 +82,8 @@ function generate_ammann_beenker_projection(
     params = Dict{Symbol,Any}(
         :radius => radius,
         :n_max => n_max,
-        :window_size => window_size,
-        :window_shape => :box_2d,
+        :window_apothem => apothem,
+        :window_shape => :octagon_2d,
         :n_vertices => length(positions),
         :symmetry => 8,
     )
