@@ -13,22 +13,6 @@ struct AmmannBeenker <: AbstractQuasicrystal{2} end
 
 const SQRT2 = sqrt(2.0)
 
-"""
-    generate_ammann_beenker_projection(radius::Real;
-                                       method::ProjectionMethod = ProjectionMethod())
-        → QuasicrystalData{2, Float64}
-
-Generate an Ammann–Beenker patch by projecting `Z^4` onto the 2D
-physical subspace of the cut-and-project construction, accepting lattice
-points whose Galois-conjugate perpendicular projection falls inside the
-regular-octagon window. The point set is exactly self-similar under
-`λ = 1 + √2`.
-
-The square/rhombus tiling is reconstructed from the vertices (see
-[`build_tile_bonds!`](@ref)-compatible `tiles`), so the returned
-`QuasicrystalData` carries a full tiling — unlike the other projection
-generators, whose `tiles` are empty.
-"""
 # Reconstruct the Ammann–Beenker tiling (squares + 45° rhombi) from a
 # vertex set. Both prototiles are parallelograms with unit edges, and in
 # the AB tiling every unit-distance vertex pair is a tile edge (the
@@ -94,6 +78,22 @@ function _reconstruct_ab_tiles(positions::Vector{SVector{2,Float64}})
     return tiles
 end
 
+"""
+    generate_ammann_beenker_projection(radius::Real;
+                                       method::ProjectionMethod = ProjectionMethod())
+        → QuasicrystalData{2, Float64}
+
+Generate an Ammann–Beenker patch by projecting `Z^4` onto the 2D
+physical subspace of the cut-and-project construction, accepting lattice
+points whose Galois-conjugate perpendicular projection falls inside the
+regular-octagon window. The point set is exactly self-similar under
+`λ = 1 + √2`.
+
+The square/rhombus tiling is reconstructed from the vertices, so the
+returned `QuasicrystalData` carries a full tiling (usable by
+`build_tile_bonds!`) — unlike the other projection generators, whose
+`tiles` are empty.
+"""
 function generate_ammann_beenker_projection(
     radius::Real; method::ProjectionMethod=ProjectionMethod()
 )
