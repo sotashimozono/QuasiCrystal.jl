@@ -232,5 +232,6 @@ export num_k_points, k_point, reciprocal_basis
 export apply_axis_bc, axis_phase, bond_weight
 export element_type, state_type, random_state, zero_state, domain
 export materialize, require_finite
+export tile_parentage
 
 end # module QuasiCrystal
