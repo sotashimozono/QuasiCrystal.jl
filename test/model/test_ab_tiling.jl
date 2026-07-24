@@ -50,9 +50,22 @@ end
     @test length(plaquettes(d)) == length(d.tiles)
 end
 
-@testset "AB tile_parentage still needs the substitution tree" begin
-    # The projection tiling has no deflation parentage; only substitution
-    # patches would (Penrose-style), and AB substitution is a placeholder.
-    d = generate_ammann_beenker_projection(6.0)
-    @test_throws ArgumentError tile_parentage(d, 1)
+@testset "AB tile_parentage: exact partition by coarse-tile containment" begin
+    # AB is not a stone inflation (fine tiles straddle coarse tile
+    # boundaries), but every fine-tile centre lies in exactly one coarse
+    # tile, so centre containment against the k-inflated tiling gives an
+    # exact tile parentage — the AB analogue of Penrose's tile_parentage.
+    for R in (6.0, 8.0), k in 1:2
+        d = generate_ammann_beenker_projection(R)
+        tp = tile_parentage(d, k)
+        @test sort(vcat(tp...)) == collect(1:length(d.tiles))   # exact partition
+        @test all(!isempty, tp)
+    end
+
+    d = generate_ammann_beenker_projection(8.0)
+    # coarsening: fewer cells with more deflation
+    @test length(tile_parentage(d, 2)) <= length(tile_parentage(d, 1))
+    @test_throws ArgumentError tile_parentage(d, 0)                       # k >= 1
+    # the AB substitution generator is a placeholder (no :radius) → refused
+    @test_throws ArgumentError tile_parentage(generate_ammann_beenker_substitution(2), 1)
 end
