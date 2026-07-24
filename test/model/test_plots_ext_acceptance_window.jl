@@ -15,13 +15,13 @@ using Plots  # triggers QuasiCrystalPlotsExt
         @test plt2 isa Plots.Plot
     end
 
-    @testset "Ammann–Beenker :box_2d" begin
+    @testset "Ammann–Beenker :octagon_2d" begin
         qc = generate_ammann_beenker_projection(2.0)
-        @test window_shape(qc) === :box_2d
+        @test window_shape(qc) === :octagon_2d
 
         plt = plot_acceptance_window(qc; show_hyper_points=true, n_hyper=3)
         @test plt isa Plots.Plot
-        # rectangle (shape) + at least one scatter overlay
+        # octagon (shape) + at least one scatter overlay
         @test length(plt.series_list) >= 2
 
         plt2 = plot_acceptance_window(qc; show_hyper_points=false)

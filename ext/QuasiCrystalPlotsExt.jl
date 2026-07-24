@@ -107,6 +107,8 @@ function QuasiCrystal.plot_acceptance_window(
         return _plot_window_interval(data; show_hyper_points, n_hyper, kwargs...)
     elseif shape === :box_2d
         return _plot_window_box2d(data; show_hyper_points, n_hyper, kwargs...)
+    elseif shape === :octagon_2d
+        return _plot_window_octagon2d(data; show_hyper_points, n_hyper, kwargs...)
     elseif shape === :box_3d
         return _plot_window_box3d(data; show_hyper_points, n_hyper, kwargs...)
     else
@@ -229,6 +231,79 @@ function _plot_window_interval(
         end
     end
 
+    return plt
+end
+
+# ---- :octagon_2d (Ammann–Beenker) ----------------------------------
+
+function _plot_window_octagon2d(
+    data::QuasiCrystal.QuasicrystalData;
+    show_hyper_points::Bool,
+    n_hyper::Union{Nothing,Int},
+    kwargs...,
+)
+    ap = Float64(data.parameters[:window_apothem])
+    perp_proj = QuasiCrystal.hyper_reciprocal_lattice(data).perp_proj
+    n = n_hyper === nothing ? _default_n_hyper(data) : n_hyper
+
+    plt = Plots.plot(;
+        xlabel="y₁ (perp)",
+        ylabel="y₂ (perp)",
+        aspect_ratio=:equal,
+        title="Acceptance window (octagon, Ammann–Beenker)",
+        legend=:topright,
+        kwargs...,
+    )
+
+    # Octagon corners: circumradius ap / cos(π/8), at angles π/8 + k·π/4.
+    R = ap / cos(π / 8)
+    oct_x = [R * cos(π / 8 + k * π / 4) for k in 0:8]
+    oct_y = [R * sin(π / 8 + k * π / 4) for k in 0:8]
+    Plots.plot!(
+        plt,
+        oct_x,
+        oct_y;
+        seriestype=:shape,
+        fillcolor=:steelblue,
+        fillalpha=0.2,
+        linecolor=:steelblue,
+        linewidth=2,
+        label="window",
+    )
+
+    if show_hyper_points
+        d = ap * sqrt(2)
+        inoct(p) =
+            abs(p[1]) <= ap + 1e-9 &&
+            abs(p[2]) <= ap + 1e-9 &&
+            abs(p[1] + p[2]) <= d + 1e-9 &&
+            abs(p[1] - p[2]) <= d + 1e-9
+        pts = _projected_hyper_points(perp_proj, n)
+        inside = filter(inoct, pts)
+        outside = filter(!inoct, pts)
+        if !isempty(inside)
+            Plots.scatter!(
+                plt,
+                [p[1] for p in inside],
+                [p[2] for p in inside];
+                marker=:circle,
+                markersize=4,
+                color=:darkorange,
+                label="inside",
+            )
+        end
+        if !isempty(outside)
+            Plots.scatter!(
+                plt,
+                [p[1] for p in outside],
+                [p[2] for p in outside];
+                marker=:circle,
+                markersize=3,
+                color=:gray,
+                label="outside",
+            )
+        end
+    end
     return plt
 end
 
