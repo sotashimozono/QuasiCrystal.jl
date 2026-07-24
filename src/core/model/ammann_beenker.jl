@@ -13,15 +13,86 @@ struct AmmannBeenker <: AbstractQuasicrystal{2} end
 
 const SQRT2 = sqrt(2.0)
 
+# Reconstruct the Ammann–Beenker tiling (squares + 45° rhombi) from a
+# vertex set. Both prototiles are parallelograms with unit edges, and in
+# the AB tiling every unit-distance vertex pair is a tile edge (the
+# rhombus/square diagonals are 2sin(π/8), √2, 2cos(π/8) — never 1), so
+# the faces are recovered exactly: at each vertex, consecutive
+# unit-neighbours (ordered by angle) bound a tile whose fourth corner is
+# the parallelogram completion `a + b - v`. A 90° corner is a square,
+# 45°/135° a rhombus. Tiles are deduplicated by their vertex set.
+#
+# O(N²) in the edge pass, matching `build_nearest_neighbor_bonds!`.
+function _reconstruct_ab_tiles(positions::Vector{SVector{2,Float64}})
+    n = length(positions)
+    n == 0 && return Tile{2,Float64}[]
+    edgetol = 1e-6
+
+    nbr = [Int[] for _ in 1:n]
+    for i in 1:n, j in (i + 1):n
+        if abs(norm(positions[i] - positions[j]) - 1.0) < edgetol
+            push!(nbr[i], j)
+            push!(nbr[j], i)
+        end
+    end
+
+    idx = Dict{NTuple{2,Int},Int}()
+    for (i, p) in enumerate(positions)
+        idx[snap_to_grid(p, SNAP_GRID_EPS)] = i
+    end
+
+    tiles = Tile{2,Float64}[]
+    seen = Set{NTuple{4,Int}}()
+    for v in 1:n
+        ns = nbr[v]
+        isempty(ns) && continue
+        ord = sortperm([
+            atan(positions[a][2] - positions[v][2], positions[a][1] - positions[v][1]) for
+            a in ns
+        ])
+        ns = ns[ord]
+        m = length(ns)
+        for k in 1:m
+            a = ns[k]
+            b = ns[mod1(k + 1, m)]
+            va = positions[a] - positions[v]
+            vb = positions[b] - positions[v]
+            ang = acosd(clamp(dot(va, vb) / (norm(va) * norm(vb)), -1.0, 1.0))
+            (abs(ang - 45) < 1 || abs(ang - 90) < 1 || abs(ang - 135) < 1) || continue
+            w = positions[a] + positions[b] - positions[v]
+            wi = get(idx, snap_to_grid(w, SNAP_GRID_EPS), 0)
+            wi == 0 && continue
+            key = Tuple(sort(SVector(v, a, wi, b)))
+            key in seen && continue
+            push!(seen, key)
+            type = abs(ang - 90) < 1 ? Square() : RhombusAB()
+            center = (positions[v] + positions[wi]) / 2
+            push!(
+                tiles,
+                Tile{2,Float64}(
+                    [positions[v], positions[a], positions[wi], positions[b]], type, center
+                ),
+            )
+        end
+    end
+    return tiles
+end
+
 """
     generate_ammann_beenker_projection(radius::Real;
                                        method::ProjectionMethod = ProjectionMethod())
         → QuasicrystalData{2, Float64}
 
-Generate an Ammann–Beenker point set by projecting `Z^4` onto the
-2D physical subspace of the cut-and-project construction.
-Accepts lattice points whose perpendicular projection falls inside
-a 2D window of half-width `window_size`.
+Generate an Ammann–Beenker patch by projecting `Z^4` onto the 2D
+physical subspace of the cut-and-project construction, accepting lattice
+points whose Galois-conjugate perpendicular projection falls inside the
+regular-octagon window. The point set is exactly self-similar under
+`λ = 1 + √2`.
+
+The square/rhombus tiling is reconstructed from the vertices, so the
+returned `QuasicrystalData` carries a full tiling (usable by
+`build_tile_bonds!`) — unlike the other projection generators, whose
+`tiles` are empty.
 """
 function generate_ammann_beenker_projection(
     radius::Real; method::ProjectionMethod=ProjectionMethod()
@@ -77,7 +148,7 @@ function generate_ammann_beenker_projection(
             push!(positions, pos_par)
         end
     end
-    tiles = Tile{2,Float64}[]
+    tiles = _reconstruct_ab_tiles(positions)
 
     params = Dict{Symbol,Any}(
         :radius => radius,
@@ -85,6 +156,7 @@ function generate_ammann_beenker_projection(
         :window_apothem => apothem,
         :window_shape => :octagon_2d,
         :n_vertices => length(positions),
+        :n_tiles => length(tiles),
         :symmetry => 8,
     )
     return QuasicrystalData{2,Float64}(AmmannBeenker(), positions, tiles, method, params)

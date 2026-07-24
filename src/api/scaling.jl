@@ -196,15 +196,17 @@ function LatticeCore.cell_partition(d::QuasicrystalData, k::Integer=1)
     return cells
 end
 
-# ---- 2D inflation parentage (Penrose) -------------------------------
+# ---- 2D inflation parentage (Penrose + Ammann–Beenker) --------------
 #
 # In 2D a *vertex* cell_partition is not canonical: vertices are shared
 # corners of several tiles. The clean, exact object is a *tile*
-# parentage — which coarse cell each fine tile descends from. For the
-# Robinson-triangle deflation the coarse Robinson triangles tile the
-# plane exactly (fine rhombi may straddle coarse *rhombus* boundaries,
-# but every fine-tile centre lies in exactly one coarse *triangle*), so
-# the parentage is well defined by centre containment.
+# parentage — which coarse cell each fine tile descends from — defined by
+# fine-tile-centre containment in the k-inflated tiling. Neither family
+# is a stone inflation (fine tiles straddle coarse *tile* boundaries),
+# but a covering of coarse cells whose interiors partition the plane
+# fixes each centre uniquely: coarse Robinson triangles for Penrose,
+# and the coarse tiles themselves for Ammann–Beenker (its square/rhombus
+# tiling already covers the plane).
 
 # Point-in-triangle by consistent edge orientation (closed test).
 @inline function _in_triangle(p, A, B, C)
@@ -214,6 +216,26 @@ end
     has_neg = (d1 < -1e-9) | (d2 < -1e-9) | (d3 < -1e-9)
     has_pos = (d1 > 1e-9) | (d2 > 1e-9) | (d3 > 1e-9)
     return !(has_neg & has_pos)
+end
+
+# Point-in-convex-polygon (vertices in order): `p` is inside if it lies
+# on the same side of every directed edge.
+@inline function _in_convex(p, verts)
+    n = length(verts)
+    sgn = 0
+    for i in 1:n
+        a = verts[i]
+        b = verts[mod1(i + 1, n)]
+        cr = (b[1] - a[1]) * (p[2] - a[2]) - (b[2] - a[2]) * (p[1] - a[1])
+        s = cr > 1e-9 ? 1 : (cr < -1e-9 ? -1 : 0)
+        s == 0 && continue
+        if sgn == 0
+            sgn = s
+        elseif s != sgn
+            return false
+        end
+    end
+    return true
 end
 
 # The coarse Robinson triangles at generation `g - k`, expressed in the
@@ -255,15 +277,25 @@ patches, the other substitution families (whose generators are not
 exactly self-similar), and out-of-range `k`.
 """
 function tile_parentage(d::QuasicrystalData, k::Integer=1)
-    if !(d.topology isa PenroseP3 && d.generation_method isa SubstitutionMethod)
+    k >= 1 || throw(ArgumentError("tile_parentage needs k >= 1, got k = $k"))
+    if d.topology isa PenroseP3 && d.generation_method isa SubstitutionMethod
+        return _penrose_tile_parentage(d, k)
+    elseif d.topology isa AmmannBeenker && !isempty(d.tiles)
+        return _ab_tile_parentage(d, k)
+    else
         throw(
             ArgumentError(
-                "tile_parentage is implemented only for Penrose substitution patches; " *
-                "this patch is $(typeof(d.topology)) / $(typeof(d.generation_method)).",
+                "tile_parentage is implemented for Penrose substitution patches and " *
+                "Ammann–Beenker patches carrying a tiling; this patch is " *
+                "$(typeof(d.topology)) / $(typeof(d.generation_method))" *
+                (isempty(d.tiles) ? " with no tiles" : "") *
+                ".",
             ),
         )
     end
-    k >= 1 || throw(ArgumentError("tile_parentage needs k >= 1, got k = $k"))
+end
+
+function _penrose_tile_parentage(d::QuasicrystalData, k::Int)
     haskey(d.parameters, :generations) ||
         throw(ArgumentError("tile_parentage: this patch records no `:generations`."))
     g = d.parameters[:generations]::Int
@@ -286,6 +318,51 @@ function tile_parentage(d::QuasicrystalData, k::Integer=1)
         c == 0 && error(
             "tile_parentage: fine tile $ti centre fell outside every coarse Robinson " *
             "triangle — the coarse frame does not match (unexpected).",
+        )
+        push!(groups[c], ti)
+    end
+    return filter(!isempty, groups)
+end
+
+# Ammann–Beenker is not a stone inflation — fine tiles straddle coarse
+# *tile* boundaries — but every fine-tile centre lies in exactly one
+# coarse tile (the coarse tiling covers the plane, unlike Penrose's
+# coarse rhombi), so centre containment gives an exact tile parentage.
+# The coarse tiling is the same AB tiling `k` inflations up: regenerate
+# it at radius `R/λᵏ` and scale by `λᵏ` into the fine frame — exact
+# because the AB point set is self-similar (`λ·S ⊆ S`, see
+# `inflation_factor`).
+function _ab_tile_parentage(d::QuasicrystalData, k::Int)
+    haskey(d.parameters, :radius) || throw(
+        ArgumentError(
+            "tile_parentage: only projection-generated Ammann–Beenker tilings are " *
+            "supported (this patch records no `:radius`; the AB substitution generator " *
+            "is a placeholder).",
+        ),
+    )
+    R = Float64(d.parameters[:radius])
+    scale = (1 + sqrt(2))^k
+    # Over-cover `d`: the coarse patch, scaled by `scale`, must reach past
+    # `d`'s outermost fine tiles, so pad the coarse radius by a few coarse
+    # tiles. Coarse tiles outside `d` simply carry no fine tiles.
+    coarse = generate_ammann_beenker_projection(R / scale + 3.0)
+    isempty(coarse.tiles) && throw(
+        ArgumentError("cannot deflate k=$k: the coarse Ammann–Beenker tiling is empty.")
+    )
+    coarse_verts = [[scale .* v for v in t.vertices] for t in coarse.tiles]
+
+    groups = [Int[] for _ in 1:length(coarse_verts)]
+    for (ti, tile) in enumerate(d.tiles)
+        c = 0
+        for (ci, verts) in enumerate(coarse_verts)
+            if _in_convex(tile.center, verts)
+                c = ci
+                break
+            end
+        end
+        c == 0 && error(
+            "tile_parentage: fine tile $ti centre fell outside every coarse " *
+            "Ammann–Beenker tile (unexpected).",
         )
         push!(groups[c], ti)
     end
