@@ -22,7 +22,7 @@ end
     @test window_shape(fib_s) === :none
 
     ab_p = generate_ammann_beenker_projection(2.0)
-    @test window_shape(ab_p) === :box_2d
+    @test window_shape(ab_p) === :octagon_2d
 
     ab_s = generate_ammann_beenker_substitution(2)
     @test window_shape(ab_s) === :none

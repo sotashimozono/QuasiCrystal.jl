@@ -190,7 +190,7 @@ The shipped generators populate `:window_shape` as follows:
 | Generator                             | `:window_shape` |
 |---------------------------------------|-----------------|
 | `generate_fibonacci_projection`       | `:interval_1d`  |
-| `generate_ammann_beenker_projection`  | `:box_2d`       |
+| `generate_ammann_beenker_projection`  | `:octagon_2d`   |
 | `generate_penrose_projection`         | `:box_3d`       |
 | `generate_*_substitution`             | `:none`         |
 

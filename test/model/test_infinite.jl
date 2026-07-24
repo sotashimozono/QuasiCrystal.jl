@@ -126,11 +126,22 @@ end
     @test _is_subset(p_infl, p_dense)
 end
 
-@testset "inflate/deflate are excluded for Ammann–Beenker (not self-similar)" begin
+@testset "Ammann–Beenker inflate/deflate (now self-similar)" begin
     ab = InfiniteQuasicrystal(AmmannBeenker())
-    @test_throws ArgumentError inflation_factor(AmmannBeenker())
-    @test_throws ArgumentError inflate(ab)
-    @test_throws ArgumentError deflate(ab)
-    # but the un-inflated infinite AB still materialises fine.
-    @test num_sites(materialize(ab; radius=4.0)) > 0
+    λ = 1 + sqrt(2)
+    @test inflation_factor(AmmannBeenker()) ≈ λ
+    @test inflate(ab).inflation == 1
+    @test deflate(inflate(ab)).inflation == 0
+
+    # inflate scales the materialised positions by exactly λ.
+    base = positions(materialize(ab; radius=8.0))
+    up = positions(materialize(inflate(ab); radius=8.0))
+    @test length(up) == length(base)
+    @test all(up[i] ≈ λ .* base[i] for i in eachindex(base))
+
+    # self-similarity: the inflated (sparser) set is a subset of a denser
+    # base set — λ·S ⊆ S, the fix that made AB well-posed.
+    infl = positions(materialize(inflate(ab); radius=6.0))
+    dense = positions(materialize(ab; radius=6.0 * λ + 1.0))
+    @test _is_subset(infl, dense)
 end

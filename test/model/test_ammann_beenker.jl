@@ -53,4 +53,18 @@
             @test norm(b.vector) < 1.1
         end
     end
+
+    @testset "projection is exactly self-similar (λ·S ⊆ S)" begin
+        # The corrected Galois-conjugate perp projection + octagon window
+        # make the Ammann–Beenker point set self-similar under λ = 1+√2.
+        λ = 1 + sqrt(2)
+        pts = positions(generate_ammann_beenker_projection(12.0))
+        rmax = maximum(norm(p) for p in pts)
+        inner = [p for p in pts if norm(p) <= rmax / λ - 0.5]
+        @test !isempty(inner)
+        # every inflated inner point lands on an existing point
+        miss = count(p -> minimum(sum(abs2, λ .* p - q) for q in pts) > 1e-10, inner)
+        @test miss == 0
+        @test window_shape(generate_ammann_beenker_projection(3.0)) == :octagon_2d
+    end
 end
