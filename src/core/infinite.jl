@@ -37,6 +37,15 @@ The cutoff keyword is family-specific, matching the underlying
 generator: `n_points` for Fibonacci, `radius` for Penrose and
 Ammann–Beenker. Positions use `Float64`, matching the generators.
 
+Being the ideal infinite object, it is also the natural home for the
+self-similar RG maps [`inflate`](@ref) / [`deflate`](@ref), stored
+lazily as an integer `inflation` power and applied only on
+`materialize`:
+
+```julia
+big = materialize(inflate(inf); n_points = 100)   # points scaled by ϕ
+```
+
 Only cut-and-project generation is modelled; substitution/inflation is
 a finite construction keyed by depth, not an infinite-abstract object,
 so it is out of scope for this type.
@@ -46,12 +55,94 @@ struct InfiniteQuasicrystal{
 } <: AbstractLattice{D,T}
     topology::Q
     layout::L
+    inflation::Int
 end
 
 function InfiniteQuasicrystal(
-    topology::Q; layout::AbstractSiteLayout=UniformLayout(IsingSite())
+    topology::Q; layout::AbstractSiteLayout=UniformLayout(IsingSite()), inflation::Integer=0
 ) where {D,Q<:AbstractQuasicrystal{D}}
-    return InfiniteQuasicrystal{D,Float64,Q,typeof(layout)}(topology, layout)
+    return InfiniteQuasicrystal{D,Float64,Q,typeof(layout)}(
+        topology, layout, Int(inflation)
+    )
+end
+
+# ---- RG inflate / deflate -------------------------------------------
+#
+# A cut-and-project quasicrystal is exactly self-similar: with λ the
+# Perron eigenvalue of the family's substitution, `λ·S ⊆ S` (verified to
+# ~1e-14 for the Fibonacci and Penrose generators — every point of the
+# scaled set is a genuine point of the base set). Inflation is therefore
+# an exact self-map on the *infinite* object — no finite-patch
+# containment caveat, unlike `rescale` on a materialised
+# `QuasicrystalData`. It is represented lazily as an integer power on the
+# abstract lattice and applied only at `materialize` time by scaling
+# positions by `λ^inflation`.
+#
+# Ammann–Beenker is excluded on purpose: its shipped projection
+# generator is not exactly self-similar (`λ·S ⊄ S` numerically for every
+# candidate λ), so an exact inflation self-map is not well defined.
+
+"""
+    inflation_factor(topo::AbstractQuasicrystal) → Float64
+
+The linear inflation factor λ (Perron eigenvalue of the family's
+substitution): the golden ratio ϕ for [`FibonacciLattice`](@ref) and
+[`PenroseP3`](@ref).
+
+Throws for [`AmmannBeenker`](@ref): the shipped AB projection generator
+is not exactly self-similar, so [`inflate`](@ref) / [`deflate`](@ref)
+are not well-posed for it.
+"""
+inflation_factor(::FibonacciLattice) = (1 + sqrt(5)) / 2
+inflation_factor(::PenroseP3) = (1 + sqrt(5)) / 2
+function inflation_factor(::AmmannBeenker)
+    return throw(
+        ArgumentError(
+            "inflate/deflate is not available for Ammann–Beenker: the shipped " *
+            "projection generator is not exactly self-similar (λ·S ⊄ S numerically), " *
+            "so an exact inflation self-map is not well defined. Fibonacci and Penrose " *
+            "are supported.",
+        ),
+    )
+end
+
+"""
+    inflate(inf::InfiniteQuasicrystal, k::Integer = 1) → InfiniteQuasicrystal
+
+Apply `k` RG inflations: return the same infinite quasicrystal viewed at
+a length scale `λ^k` larger (λ = [`inflation_factor`](@ref)). Because the
+cut-and-project set is exactly self-similar (`λ·S ⊆ S`), the inflated
+lattice's materialised points are genuine points of the same set scaled
+by `λ^k`. [`deflate`](@ref) is the inverse. Topology and layout carry
+over.
+
+Supported for Fibonacci and Penrose; throws for Ammann–Beenker.
+"""
+function inflate(inf::InfiniteQuasicrystal, k::Integer=1)
+    inflation_factor(inf.topology)   # validate the family supports inflation
+    return InfiniteQuasicrystal(
+        inf.topology; layout=inf.layout, inflation=inf.inflation + k
+    )
+end
+
+"""
+    deflate(inf::InfiniteQuasicrystal, k::Integer = 1) → InfiniteQuasicrystal
+
+Apply `k` RG deflations, the inverse of [`inflate`](@ref): the same
+infinite quasicrystal at a length scale `λ^k` finer.
+"""
+deflate(inf::InfiniteQuasicrystal, k::Integer=1) = inflate(inf, -k)
+
+# Scale a freshly generated patch by `λ^inflation`. `inflation == 0`
+# (the common case, and the only one reachable for Ammann–Beenker) is a
+# no-op that never touches `inflation_factor`.
+function _apply_inflation(d::QuasicrystalData{D,T}, inf::InfiniteQuasicrystal) where {D,T}
+    inf.inflation == 0 && return d
+    s = T(inflation_factor(inf.topology))^inf.inflation
+    scaled = [s .* p for p in d.positions]
+    return QuasicrystalData{D,T}(
+        d.topology, scaled, d.tiles, d.generation_method, d.parameters; layout=d.layout
+    )
 end
 
 # ---- Traits ---------------------------------------------------------
@@ -122,7 +213,9 @@ any generated `QuasicrystalData`.
 function LatticeCore.materialize(
     inf::InfiniteQuasicrystal{1,T,FibonacciLattice}; n_points::Int=100
 ) where {T}
-    return _relayout(generate_fibonacci_projection(n_points), inf.layout)
+    return _apply_inflation(
+        _relayout(generate_fibonacci_projection(n_points), inf.layout), inf
+    )
 end
 
 """
@@ -136,7 +229,7 @@ cut-and-project ([`generate_penrose_projection`](@ref)), carrying
 function LatticeCore.materialize(
     inf::InfiniteQuasicrystal{2,T,PenroseP3}; radius::Real=5.0
 ) where {T}
-    return _relayout(generate_penrose_projection(radius), inf.layout)
+    return _apply_inflation(_relayout(generate_penrose_projection(radius), inf.layout), inf)
 end
 
 """
@@ -150,5 +243,7 @@ cut-and-project ([`generate_ammann_beenker_projection`](@ref)), carrying
 function LatticeCore.materialize(
     inf::InfiniteQuasicrystal{2,T,AmmannBeenker}; radius::Real=5.0
 ) where {T}
-    return _relayout(generate_ammann_beenker_projection(radius), inf.layout)
+    return _apply_inflation(
+        _relayout(generate_ammann_beenker_projection(radius), inf.layout), inf
+    )
 end

@@ -160,6 +160,7 @@ export tile_counts, tile_density, tile_area, golden_ratio_check, tile_perimeter
 export GOLDEN_RATIO, ϕ
 export FibonacciLattice, PenroseP3, AmmannBeenker
 export InfiniteQuasicrystal
+export inflate, deflate, inflation_factor
 export generate_fibonacci_projection, generate_fibonacci_substitution
 export generate_penrose_projection, generate_penrose_substitution
 export generate_ammann_beenker_projection, generate_ammann_beenker_substitution

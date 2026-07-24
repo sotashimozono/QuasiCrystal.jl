@@ -63,3 +63,74 @@ end
         @test num_sites(d) > 0
     end
 end
+
+# ---- RG inflate / deflate -------------------------------------------
+
+const _PHI = (1 + sqrt(5)) / 2
+
+# every point of `sub` lies (within tol) on a point of `base`?
+function _is_subset(sub, base; tol=1e-8)
+    return all(y -> minimum(sum(abs2, y - x) for x in base) <= tol^2, sub)
+end
+
+@testset "inflation_factor and lazy inflate/deflate bookkeeping" begin
+    @test inflation_factor(FibonacciLattice()) ≈ _PHI
+    @test inflation_factor(PenroseP3()) ≈ _PHI
+
+    inf = InfiniteQuasicrystal(FibonacciLattice())
+    @test inf.inflation == 0
+    @test inflate(inf).inflation == 1
+    @test inflate(inf, 3).inflation == 3
+    @test deflate(inf).inflation == -1
+    @test deflate(inflate(inf)).inflation == 0          # inverse
+    # inflate/deflate carry topology and layout over.
+    inf_xy = InfiniteQuasicrystal(FibonacciLattice(); layout=UniformLayout(XYSite()))
+    @test site_type(inflate(inf_xy), 1) == XYSite()
+end
+
+@testset "inflate scales materialised positions by λ (exact self-map)" begin
+    # Fibonacci (count cutoff): materialise(inflate) == ϕ · materialise(base).
+    base = positions(materialize(InfiniteQuasicrystal(FibonacciLattice()); n_points=60))
+    up = positions(
+        materialize(inflate(InfiniteQuasicrystal(FibonacciLattice())); n_points=60)
+    )
+    @test length(up) == length(base)
+    @test all(up[i] ≈ _PHI .* base[i] for i in eachindex(base))
+
+    # deflate is the exact inverse.
+    back = positions(
+        materialize(deflate(inflate(InfiniteQuasicrystal(FibonacciLattice()))); n_points=60)
+    )
+    @test all(back[i] ≈ base[i] for i in eachindex(base))
+
+    # Penrose (radius cutoff): same elementwise λ scaling.
+    pbase = positions(materialize(InfiniteQuasicrystal(PenroseP3()); radius=6.0))
+    pup = positions(materialize(inflate(InfiniteQuasicrystal(PenroseP3())); radius=6.0))
+    @test length(pup) == length(pbase)
+    @test all(pup[i] ≈ _PHI .* pbase[i] for i in eachindex(pbase))
+end
+
+@testset "self-similarity: inflated points are genuine points of the set" begin
+    # The deep RG property (not just coordinate rescaling): the inflated
+    # (sparser) set is a SUBSET of the denser base set — λ·S ⊆ S.
+    # Fibonacci: base must cover the ϕ-scaled range, so generate more.
+    fib = FibonacciLattice()
+    infl = positions(materialize(inflate(InfiniteQuasicrystal(fib)); n_points=80))
+    dense = positions(materialize(InfiniteQuasicrystal(fib); n_points=200))
+    @test _is_subset(infl, dense)
+
+    # Penrose: base radius must reach ϕ·R to contain the inflated points.
+    pen = PenroseP3()
+    p_infl = positions(materialize(inflate(InfiniteQuasicrystal(pen)); radius=5.0))
+    p_dense = positions(materialize(InfiniteQuasicrystal(pen); radius=5.0 * _PHI + 1.0))
+    @test _is_subset(p_infl, p_dense)
+end
+
+@testset "inflate/deflate are excluded for Ammann–Beenker (not self-similar)" begin
+    ab = InfiniteQuasicrystal(AmmannBeenker())
+    @test_throws ArgumentError inflation_factor(AmmannBeenker())
+    @test_throws ArgumentError inflate(ab)
+    @test_throws ArgumentError deflate(ab)
+    # but the un-inflated infinite AB still materialises fine.
+    @test num_sites(materialize(ab; radius=4.0)) > 0
+end
