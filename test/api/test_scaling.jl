@@ -84,9 +84,13 @@ end
     @test num_sites(up) == num_sites(fibonacci(6))
 end
 
-@testset "cell_partition is refused, with a reason" begin
-    # Inflation parentage is not tracked, so this must raise rather than return something plausible.
+@testset "cell_partition is refused for families without tracked parentage" begin
+    # Fibonacci substitution parentage IS tracked (see test_cell_partition.jl).
+    # The other substitution families re-centre on inflation, so a
+    # containment-based parentage is not well defined and must raise rather
+    # than return something plausible.
     for (name, f, n) in SUBST
+        name == "fibonacci" && continue
         @test_throws ArgumentError cell_partition(f(n))
         @test_throws ArgumentError cell_partition(f(n), 2)
     end
