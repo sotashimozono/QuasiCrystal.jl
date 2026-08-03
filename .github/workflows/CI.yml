@@ -1,34 +1,36 @@
 name: CI
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     tags: '*'
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# This suite was not split before. The whole sharded-test vertical is QAtlasHub/TestShards.jl:
+# nothing is planned up front — each shard decides what it owns from the same timing history —
+# and the reusable merges the shards' coverage into one Codecov upload, merges their records into
+# one ordered document, checks that every unit ran exactly once, and refreshes `ci-timings` on
+# pushes to main.
+#
+# The split is not the only thing gained. The exactly-once check and the merged record hold for a
+# small suite too, and with no history the first run is round-robin and balances itself from the
+# second push onward.
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-    steps:
-      - uses: actions/checkout@v7
-      - uses: julia-actions/setup-julia@v3
-        with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v3
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
-      - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v7
-        with:
-          file: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
+    permissions:
+      contents: write   # the timing history is pushed to the `ci-timings` orphan branch
+    uses: QAtlasHub/TestShards.jl/.github/workflows/sharded-tests.yml@main
+    with:
+      # A starting point. The diagnosis printed on every run names the knee for THIS suite —
+      # read it and set what it says rather than keeping this number out of inertia.
+      shards: 8
+      # Also refreshes: a registry present but stale resolves fine while failing to see anything
+      # published since it was last pulled.
+      registries: |
+        General
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

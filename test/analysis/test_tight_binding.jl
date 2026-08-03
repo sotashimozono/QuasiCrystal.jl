@@ -76,12 +76,12 @@ end
         ext = fill(1 / sqrt(N), N)
         @test inverse_participation_ratio(ext) ≈ 1 / N rtol = 1e-12
         # single-site state -> IPR = 1
-        loc = zeros(N);
+        loc = zeros(N)
         loc[7] = 1.0
         @test inverse_participation_ratio(loc) == 1.0
         # a state on m equal sites -> IPR = 1/m (participation number = m)
-        m = 5;
-        s = zeros(N);
+        m = 5
+        s = zeros(N)
         s[1:m] .= 1 / sqrt(m)
         @test inverse_participation_ratio(s) ≈ 1 / m rtol = 1e-12
         @test_throws ArgumentError inverse_participation_ratio(zeros(N))
