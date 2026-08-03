@@ -43,7 +43,7 @@ end
     end
 
     @testset "localized: strong on-site disorder ⇒ τ ≈ 0" begin
-        sizes = Int[];
+        sizes = Int[]
         mis = Float64[]
         for g in gens
             qc = fib_chain_loc(g)
@@ -58,7 +58,7 @@ end
     end
 
     @testset "critical: off-diagonal Fibonacci model ⇒ 0 < τ < 1" begin
-        sizes = Int[];
+        sizes = Int[]
         mis = Float64[]
         for g in gens
             qc = fib_chain_loc(g)
@@ -84,11 +84,11 @@ end
         # critical
         let s = Int[], m = Float64[]
             for g in gens
-                qc = fib_chain_loc(g);
+                qc = fib_chain_loc(g)
                 nb = length(bonds(qc))
                 word = fibonacci_word(FibonacciLattice(), g)
                 H = tight_binding_hamiltonian(qc, [word[k] == 0 ? 1.0 : 0.4 for k in 1:nb])
-                push!(s, num_sites(qc));
+                push!(s, num_sites(qc))
                 push!(m, mean_inverse_participation_ratio(H))
             end
             τ[:crit] = ipr_scaling_exponent(s, m)
@@ -96,7 +96,7 @@ end
         # localized
         let s = Int[], m = Float64[]
             for g in gens
-                qc = fib_chain_loc(g);
+                qc = fib_chain_loc(g)
                 N = num_sites(qc)
                 Random.seed!(999 + g)
                 push!(s, N)
